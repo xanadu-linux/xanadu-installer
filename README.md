@@ -2,4 +2,6 @@
 
 [![Build Status](https://travis-ci.org/sinfallas/xanadu-installer.svg)](https://travis-ci.org/sinfallas/xanadu-installer)
 
+[![DOI](https://zenodo.org/badge/4102/sinfallas/xanadu-installer.svg)](https://zenodo.org/badge/latestdoi/4102/sinfallas/xanadu-installer)
+
 Xanadu GNU/Linux installer based on refractainstaller-8.0.3 by Dean Linkous
