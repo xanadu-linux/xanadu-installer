@@ -1,10 +1,23 @@
-commit 987b6eb215bd49e2a978082a8f70674360e4f640 (HEAD, origin/master, origin/HEAD, master)
+commit 7a13ea8bad73833e50e0b49354aca4ca7d932214 (HEAD, origin/master, origin/HEAD, master)
+Author: jose perez <sinfallas@gmail.com>
+Date:   Sun Nov 29 12:36:58 2015 -0430
+
+    * se colocan barras de progreso
+    * se colocan advertencias
+
+commit 37d663ea75f7ac1541cedf3ac717c569373cc7d9
+Author: jose perez <sinfallas@gmail.com>
+Date:   Thu Nov 12 20:42:44 2015 -0430
+
+    * changelog
+
+commit 987b6eb215bd49e2a978082a8f70674360e4f640
 Author: jose perez <sinfallas@gmail.com>
 Date:   Thu Nov 12 20:42:33 2015 -0430
 
     * zenodo
 
-commit 036ba9f163e069004d3046ffcc02401eeaecd106
+commit 036ba9f163e069004d3046ffcc02401eeaecd106 (tag: v0.1)
 Author: jose perez <sinfallas@gmail.com>
 Date:   Thu Nov 12 20:23:22 2015 -0430
 
