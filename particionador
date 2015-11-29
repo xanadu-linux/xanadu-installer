@@ -1,5 +1,14 @@
 #!/bin/bash
 LC_ALL=C
+function advert () {
+yad --skip-taskbar --button=ACEPTAR:0 --button=SALIR:1 --fixed --center --text-align=fill --borders=6 --title="ADVERTENCIA" --text="Esta opción eliminara toda la informacion del disco y no podra revertirse."
+if [[ $? = 0 ]] ; then
+	echo "1" > /del/null
+else
+	source refractainstaller-yad
+fi
+}
+
 function dialogopart () {
 	dispositivo=$(fdisk -l | grep "Disco" | awk '{print $2}' | sed 's/.$//g' | yad --center --no-click --list --title="Disco a particionar" --text="Seleccione el disco que desea particionar." --separator="" --column 'Dispositivo' --height 380 --width 150 --button="ACEPTAR":0)
 	if [[ -z "$dispositivo" ]] ; then
@@ -45,28 +54,35 @@ function dialogopart () {
 }
 
 function milvm () {
+advert
 if yad --skip-taskbar --fixed --center --text-align=fill --borders=6 --title="ADVERTENCIA" --text="Se recomienda utilizar un sistema de energia de respaldo para utilizar LVM"; then	
 	dialogopart
 	if [[ $(parted -s "$dispositivo" -- print | grep "Partition" | awk '{print $3}') = msdos ]]; then
-		parted -a optimal -s "$dispositivo" -- mkpart extended 1330 100%
-		parted -a optimal -s "$dispositivo" -- mkpart logic ext2 1331 100%
-		logica=$(parted -s "$dispositivo" -l | grep "1331" | awk '{print $1}')
-		pvcreate -ffy $(echo $dispositivo"$logica")
-		vgcreate -fy xanadu $(echo $dispositivo"$logica")
-		lvcreate -l 100%FREE -n root xanadu
-		partprobe "$dispositivo"
-		mkfs.ext4 -F /dev/mapper/xanadu-root
-		echo "$dispositivo" > /tmp/particionador
+		function milvm2 () {
+			parted -a optimal -s "$dispositivo" -- mkpart extended 1330 100%
+			parted -a optimal -s "$dispositivo" -- mkpart logic ext2 1331 100%
+			logica=$(parted -s "$dispositivo" -l | grep "1331" | awk '{print $1}')
+			pvcreate -ffy $(echo $dispositivo"$logica")
+			vgcreate -fy xanadu $(echo $dispositivo"$logica")
+			lvcreate -l 100%FREE -n root xanadu
+			partprobe "$dispositivo"
+			mkfs.ext4 -F /dev/mapper/xanadu-root
+			echo "$dispositivo" > /tmp/particionador
+		}
+		milvm2 | yad --fixed --progress --pulsate --auto-close --skip-taskbar --center --progress-text="Creando particiones, por favor espere..." --title="Particionando"
 	else
-		parted -a optimal -s "$dispositivo" -- mkpart non-fs 1331 100%
-		parted "$dispositivo" set 4 lvm on
-		casilvm=$(fdisk -l "$dispositivo" | grep "LVM" | awk '{print $1}')
-		pvcreate -ffy "$casilvm"
-		vgcreate -fy xanadu "$casilvm"
-		lvcreate -l 100%FREE -n root xanadu
-		partprobe "$dispositivo"
-		mkfs.ext4 -F /dev/mapper/xanadu-root
-		echo "$dispositivo" > /tmp/particionador
+		function milvm3 () {
+			parted -a optimal -s "$dispositivo" -- mkpart non-fs 1331 100%
+			parted "$dispositivo" set 4 lvm on
+			casilvm=$(fdisk -l "$dispositivo" | grep "LVM" | awk '{print $1}')
+			pvcreate -ffy "$casilvm"
+			vgcreate -fy xanadu "$casilvm"
+			lvcreate -l 100%FREE -n root xanadu
+			partprobe "$dispositivo"
+			mkfs.ext4 -F /dev/mapper/xanadu-root
+			echo "$dispositivo" > /tmp/particionador
+		}
+		milvm3 | yad --fixed --progress --pulsate --auto-close --skip-taskbar --center --progress-text="Creando particiones, por favor espere..." --title="Particionando"
 	fi
 else
 	source refractainstaller-yad
@@ -74,9 +90,13 @@ fi
 }
 
 function miparticion () {
+	advert
 	dialogopart
-	parted -a optimal -s "$dispositivo" -- mkpart primary ext4 1331 100%
-	partprobe "$dispositivo"
-	mkfs.ext4 -L root -F $(fdisk -l "$dispositivo" | grep "Sistema de ficheros de Linux" | awk '{print $1}')
-	echo "$dispositivo" > /tmp/particionador
+	function miparticion2 () {
+		parted -a optimal -s $dispositivo -- mkpart primary ext4 1331 100%
+		partprobe $dispositivo
+		mkfs.ext4 -L root -F $(fdisk -l $dispositivo | grep "Sistema de ficheros de Linux" | awk '{print $1}')
+		echo $dispositivo > /tmp/particionador
+	}
+	miparticion2 | yad --fixed --progress --pulsate --auto-close --skip-taskbar --center --progress-text="Creando particiones, por favor espere..." --title="Particionando"
 }
