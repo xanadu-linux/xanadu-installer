@@ -644,7 +644,7 @@ fi
 
 yad "$miicono" --center --text-align=fill --borders=6 --info --title=Summary --button="Proceder con la instalacion.":0 --button="Salir":1 --text="Por favor CIERRE cualquier otra aplicacion en ejecucion.
 
-Aqui hay un sumario de lo que se hara. ESTA ES SU ULTIMA OPORTUNIDAD PARA SALIR antes de que algun cambio se haga al disco.
+Aqui hay un sumario de lo que se hara. ESTA ES SU ULTIMA OPORTUNIDAD PARA SALIR antes de proceder con la instalacion.
 
 $grub_dev_message
 $install_dev_message$os_enc_message
