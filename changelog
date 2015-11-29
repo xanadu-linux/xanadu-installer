@@ -1,4 +1,16 @@
-commit 7a13ea8bad73833e50e0b49354aca4ca7d932214 (HEAD, origin/master, origin/HEAD, master)
+commit 9b4af2f071852b2d06c745a51872fb73da392c11 (HEAD, origin/master, origin/HEAD, master)
+Author: jose perez <sinfallas@gmail.com>
+Date:   Sun Nov 29 12:49:51 2015 -0430
+
+    * se cambia el texto del ultimo menu
+
+commit 91cf628afda2bf5bbbb36b2995a16e6320468d8a
+Author: jose perez <sinfallas@gmail.com>
+Date:   Sun Nov 29 12:37:16 2015 -0430
+
+    * changelog
+
+commit 7a13ea8bad73833e50e0b49354aca4ca7d932214
 Author: jose perez <sinfallas@gmail.com>
 Date:   Sun Nov 29 12:36:58 2015 -0430
 
