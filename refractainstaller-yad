@@ -11,7 +11,6 @@ swapfile_blocksize="1024"
 swapfile_count="262144"
 pmount_fixed="no"
 fs_type_boot="ext4"
-
 source /usr/bin/variables
 rm -f "$parti"
 exec 2>"$error_log"
@@ -108,10 +107,10 @@ function milvm () {
 }
 
 function miparticion2 () {
-	parted -a optimal -s $dispositivo -- mkpart primary ext4 1331 100%
-	partprobe $dispositivo
-	mkfs.ext4 -L root -F $(fdisk -l $dispositivo | grep "Sistema de ficheros de Linux" | awk '{print $1}')
-	echo $dispositivo > "$parti"
+	parted -a optimal -s "$dispositivo" -- mkpart primary ext4 1331 100%
+	partprobe "$dispositivo"
+	mkfs.ext4 -L root -F $(fdisk -l "$dispositivo" | grep "Sistema de ficheros de Linux" | awk '{print $1}')
+	echo "$dispositivo" > "$parti"
 }
 
 function miparticion () {
@@ -173,9 +172,6 @@ function finalizando_1 () {
 		echo ' Option "DRI" "true"' >> /target/etc/X11/xorg.conf
 		echo 'EndSection' >> /target/etc/X11/xorg.conf
 	fi
-	if (( $memoria > 4096000 )); then
-		echo "tmpfs /var/cache/apt/archives tmpfs noatime,async,nodev 0 0" >> /etc/fstab
-	fi
 	chmod 600 /target/etc/sudoers
 	chmod 644 /target/usr/bin/lxpolkit
 	chmod -R g=-r-x,o=-r-x /home/user/
@@ -185,13 +181,10 @@ function finalizando_1 () {
 	chroot /target systemctl enable systemd-readahead-replay
 	chroot /target systemctl enable swapspace
 	chroot /target systemctl disable clamav-freshclam
-	chroot /target systemctl disable fail2ban
 	chroot /target systemctl disable i2p
 	chroot /target systemctl disable memlockd
-	chroot /target systemctl disable ntp
 	chroot /target systemctl disable polipo
 	chroot /target systemctl disable privoxy
-	chroot /target systemctl disable psad
 	chroot /target systemctl disable ssh
 	chroot /target systemctl disable tor
 	chroot /target iucode_tool --scan-system
@@ -200,12 +193,15 @@ function finalizando_1 () {
 	chroot /target yes "" | sensors-detect
 	chroot /target apt -y remove xanadu-installer sysvinit xanadu-grubdoctor
 	if (( $memoria > 4096000 )); then
+		echo "tmpfs /var/cache/apt/archives tmpfs noatime,async,nodev 0 0" >> /etc/fstab
 		if yad --skip-taskbar --fixed --center --text-align=fill --borders=6 --title="Finalizando" --text="¿Desea activar fail2ban y psad?"; then
 			chroot /target systemctl enable ntp
 			chroot /target systemctl enable fail2ban
 			chroot /target systemctl enable psad
 		else
-			echo 1 > /dev/null
+			chroot /target systemctl disable ntp
+			chroot /target systemctl disable fail2ban
+			chroot /target systemctl disable psad
 		fi
 	fi
 }
@@ -382,14 +378,14 @@ esac
 grubversion=$(dpkg -l | grep -v bin | grep -v doc | awk '$2 ~ "grub-[pc]" {print $2}' | grep -v amd64 | grep -v i386 | grep -v common)
 
 check_exit () {
-if [[ $? != 0 ]]; then
-	yad --center --question --title="Error" --window-icon=error --button="Continuar":0 --button="Salir ahora":1 --text="Error detectado: $?  $error_message
-\Vea $error_log para detalles. \n\nEsto puede no ser fatal.. Presione \"Continuar\" para proceder"
 	if [[ $? != 0 ]]; then
-		cleanup
-		exit 1
+		yad --center --question --title="Error" --window-icon=error --button="Continuar":0 --button="Salir ahora":1 --text="Error detectado: $?  $error_message
+\Vea $error_log para detalles. \n\nEsto puede no ser fatal.. Presione \"Continuar\" para proceder"
+		if [[ $? != 0 ]]; then
+			cleanup
+			exit 1
+		fi
 	fi
-fi
 }
 
 if [[ $install = "expert" ]]; then
@@ -417,41 +413,41 @@ if [[ $? = 1 ]]; then
 fi
 
 if $(echo $opts | grep -q 01); then 
-    change_user="yes"
+	change_user="yes"
 fi
 
 if $(echo $opts | grep -q 02); then
-    sep_home="yes"
+	sep_home="yes"
 fi
 
 if $(echo $opts | grep -q 03); then
-    sep_boot="yes"
+	sep_boot="yes"
 fi
 
 if $(echo $opts | grep -q 04); then
-    use_existing_swap="yes"
+	use_existing_swap="yes"
 fi
 
 if $(echo $opts | grep -q 05); then
-    encrypt_os="yes"
+	encrypt_os="yes"
 fi
 
 if $(echo $opts | grep -q 06); then
-    encrypt_home="yes"
+	encrypt_home="yes"
 fi
 
 if $(echo $opts | grep -q 07); then
-    write_random="yes"
+	write_random="yes"
 fi
 
 if $(echo $opts | grep -q 08); then
-    write_zero="yes"               
+	write_zero="yes"               
 fi
 
 if $(echo $opts | grep -q 09); then
-    bootloader="no"
+	bootloader="no"
 else
-    bootloader="yes"
+	bootloader="yes"
 fi
 
 if $(echo $opts | grep -q 10); then
@@ -508,14 +504,14 @@ if [[ $encrypt_os = "yes" ]] || [[ $encrypt_home = "yes" ]]; then
 fi    
 
 function preinstall () {
-yad "$miicono" --image=gtk-dialog-info --center --title=Particionamiento --text-align=fill --borders=6 --button="Particiones Convencionales":0 --button="Utilizar LVM":1 --button="Regresar":2 --button="Salir":3 --text="Seleccione el tipo de particiones que desea utilizar."
-ans="$?"
-case $ans in
-	0) miparticion ; check_exit ;;
-	1) milvm ; check_exit ;;
-	2) source refractainstaller-yad ;;
-	3) exit 0 ;;
-esac
+	yad "$miicono" --image=gtk-dialog-info --center --title=Particionamiento --text-align=fill --borders=6 --button="Particiones Convencionales":0 --button="Utilizar LVM":1 --button="Regresar":2 --button="Salir":3 --text="Seleccione el tipo de particiones que desea utilizar."
+	ans="$?"
+	case $ans in
+		0) miparticion ; check_exit ;;
+		1) milvm ; check_exit ;;
+		2) source refractainstaller-yad ;;
+		3) exit 0 ;;
+	esac
 }
 
 yad "$miicono" --center --title=Particionamiento --text-align=fill --borders=6 --button="Ejecutar GParted":0 --button="Automatico":1 \
@@ -603,7 +599,7 @@ if [[ $install = "expert" ]]; then
 fi
 
 if [[ -f "$parti" ]]; then
-	echo 1 > /dev/null
+	echo "1" > /dev/null
 else
 	blkid -c /dev/null | awk '{print $1 $2}' | yad "$miicono" --timeout 20 --text-info --title="Lista de particiones" --text="Lista de particiones (para referencia) Usted puede necesitar esto mas adelante." --width 820 --height 400 --button="Cerrar":0 & sleep 2
 fi
@@ -977,7 +973,7 @@ fi
 
 if [[ $no_format != "yes" ]]; then
 	if [[ -f "$parti" ]]; then
-		echo 1 > /dev/null
+		echo "1" > /dev/null
 	else
 		if [[ $fs_type_os = ext4 ]]; then
 			mkfs.$fs_type_os -F "$install_part" ; check_exit
@@ -1017,7 +1013,7 @@ if [[ -n $boot_dev ]]; then
 	mkdir /target_boot ; check_exit
 	if [[ $no_format != "yes" ]]; then
 		if [[ -f /sys/firmware/efi/runtime ]]; then
-			echo 1 > /dev/null
+			echo "1" > /dev/null
 		else
 			if [[ $fs_type_os = ext4 ]]; then
 				mkfs.$fs_type_boot -F $boot_dev ; check_exit
