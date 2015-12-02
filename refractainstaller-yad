@@ -10,8 +10,7 @@ parti="/tmp/particionador"
 swapfile_blocksize="1024"
 swapfile_count="262144"
 pmount_fixed="no"
-enable_freshclam="no"
-root_ssh="no"
+
 source /usr/bin/variables
 rm -f "$parti"
 exec 2>"$error_log"
@@ -132,7 +131,7 @@ function finalizando_1 () {
 	rm -rf /target/home/*/.local/share/Trash/*
 	rm -rf /target/home/*/.mozilla/firefox/*/*Cache*
 	find /target/var/log/ -type f -exec rm -f {} \;
-	if ! [[ -z "$miswap1" ]]; then
+	if ! [[ -z "$miswap" ]]; then
 		rm -f /target/swapfile
 		sed -i 's_/swapfile_#/swapfile_g' /target/etc/fstab
 	fi
@@ -704,58 +703,55 @@ else
 fi
 
 choose_home () {
-home_dev=$(find /dev -mindepth 1 -maxdepth 1  -name "*[sh]d[a-z][1-9]*" \
-  | sort | awk '{print "\n" $0 }' \
-  | yad "$miicono" --center --list --title="Particion para /home" --text="Seleccione una particion para /home" --separator="" --column ' ' --column 'Particiones' --height=400 --width=150 --button="ACEPTAR":0)
-if [[ -n $home_dev ]]; then
-    if ! [[ -b $home_dev ]]; then
-        yad --center --info --title=Error --button="Ir atras":0 --button="Salir":1 --text="    Algo esta mal. 
+	home_dev=$(find /dev -mindepth 1 -maxdepth 1  -name "*[sh]d[a-z][1-9]*" | sort | awk '{print "\n" $0 }' | yad "$miicono" --center --list --title="Particion para /home" --text="Seleccione una particion para /home" --separator="" --column ' ' --column 'Particiones' --height=400 --width=150 --button="ACEPTAR":0)
+	if [[ -n $home_dev ]]; then
+		if ! [[ -b $home_dev ]]; then
+			yad --center --info --title=Error --button="Ir atras":0 --button="Salir":1 --text="    Algo esta mal. 
     $home_dev no es un dispositivo de bloques. "
-        if [[ $? = 0 ]]; then
-            choose_home
-        else
-            exit 1
-        fi
-    elif
-        [[ $install_dev = $home_dev ]]; then
-        yad --center --text-align=fill --borders=6 --window-icon=error --title=Error --text="Selecciono la misma particion para la raiz y para /home. Si usted no quiere una particion separada para /home, haga clic en ACEPTAR sin seleccionar una." --button="Ir atras":0 --button="Salir":1
-        if [[ $? = 0 ]]; then
-            choose_home
-        else
-            exit 1
-        fi
-    elif
-        [[ $boot_dev = $home_dev ]]; then
-        yad --center --window-icon=error --title=Error --text="Selecciono la misma particion para /home y para /boot. Intente de nuevo." --button="Ir atras":0 --button="Salir":1
-        if [[ $? = 0 ]]; then
-            choose_home
-        else
-            exit 1
-        fi
-    fi
-fi
+			if [[ $? = 0 ]]; then
+				choose_home
+			else
+				exit 1
+			fi
+		elif
+			[[ $install_dev = $home_dev ]]; then
+			yad --center --text-align=fill --borders=6 --window-icon=error --title=Error --text="Selecciono la misma particion para la raiz y para /home. Si usted no quiere una particion separada para /home, haga clic en ACEPTAR sin seleccionar una." --button="Ir atras":0 --button="Salir":1
+			if [[ $? = 0 ]]; then
+				choose_home
+			else
+				exit 1
+			fi
+		elif
+			[[ $boot_dev = $home_dev ]]; then
+			yad --center --window-icon=error --title=Error --text="Selecciono la misma particion para /home y para /boot. Intente de nuevo." --button="Ir atras":0 --button="Salir":1
+			if [[ $? = 0 ]]; then
+				choose_home
+			else
+				exit 1
+			fi
+		fi
+	fi
 }
 
 if [[ $sep_home = "yes" ]]; then
-    choose_home
+	choose_home
 fi
 
 choose_fs_home () {
-if [[ -n $home_dev ]]; then
-     fs_type_home=$(yad "$miicono" --center --list --title="Sistema de archivos para /home" --text="Que sistema de archivos le gustaria para $home_dev?" --separator="" --column "Formato" --height=200 --button="ACEPTAR":0 \
+	if [[ -n $home_dev ]]; then
+		fs_type_home=$(yad "$miicono" --center --list --title="Sistema de archivos para /home" --text="Que sistema de archivos le gustaria para $home_dev?" --separator="" --column "Formato" --height=200 --button="ACEPTAR":0 \
   "xfs" \
   "btrfs" \
   "ext4")
-fi
-
-if [[ -z $fs_type_home ]]; then
-    yad --center --window-icon=error --title=Error --button="Ir atras":0 --button="Salir":1 --text="Debe escoger un sistema de archivos para /home"
-    if [[ $? = 0 ]]; then
-        choose_fs_home
-    else
-        exit 1
-    fi
-fi
+	fi
+	if [[ -z $fs_type_home ]]; then
+		yad --center --window-icon=error --title=Error --button="Ir atras":0 --button="Salir":1 --text="Debe escoger un sistema de archivos para /home"
+		if [[ $? = 0 ]]; then
+			choose_fs_home
+		else
+			exit 1
+		fi
+	fi
 }
 
 if [[ -n $home_dev ]]; then
@@ -767,21 +763,20 @@ if [[ -n $home_dev ]]; then
 fi
 
 choose_swap () {
-swap_info=$(/sbin/blkid | grep swap | awk '{print "\n" $0 }'\
-| yad "$miicono" --center --list --title="Particion swap" --text="Seleccione una particion para swap." --separator="" --column ' ' --column 'Particiones' --height=180 --width=600 --button="ACEPTAR":0)
-swap_dev=$(echo $swap_info | awk -F: '{ print $1 }')
-if [[ -z $swap_dev ]]; then
-	yad --center --text-align=fill --borders=6 --window-icon=error --title=Error --text="No selecciono una particion para swap. Haga clic en ACEPTAR para usar un archivo en su lugar o en Cancel para salir del programa."
-        if [[ $? = 0 ]]; then
-            use_existing_swap=""
-        else
-            exit 1
-        fi
-fi
+	swap_info=$(/sbin/blkid | grep swap | awk '{print "\n" $0 }' | yad "$miicono" --center --list --title="Particion swap" --text="Seleccione una particion para swap." --separator="" --column ' ' --column 'Particiones' --height=180 --width=600 --button="ACEPTAR":0)
+	swap_dev=$(echo $swap_info | awk -F: '{ print $1 }')
+	if [[ -z $swap_dev ]]; then
+		yad --center --text-align=fill --borders=6 --window-icon=error --title=Error --text="No selecciono una particion para swap. Haga clic en ACEPTAR para usar un archivo en su lugar o en Cancel para salir del programa."
+		if [[ $? = 0 ]]; then
+			use_existing_swap=""
+		else
+			exit 1
+		fi
+	fi
 }
 
 if [[ $use_existing_swap = "yes" ]]; then
-    choose_swap
+	choose_swap
 fi
 
 fix_hostname () {
@@ -811,32 +806,32 @@ else
 fi
 
 if [[ $change_user = "yes" ]]; then
-    user_message="--> El nombre de usuario se cambiara."
+	user_message="--> El nombre de usuario se cambiara."
 fi
 
 if [[ -n $grub_dev ]]; then
-    grub_dev_message="--> El bootloader se instalara en $grub_dev"
+	grub_dev_message="--> El bootloader se instalara en $grub_dev"
 elif [[ -n $grub_partition ]]; then
 	grub_dev_message="--> El bootloader se instalara en $grub_partition"
 else
-    grub_dev_message="--> El bootloader no sera instalado."
+	grub_dev_message="--> El bootloader no sera instalado."
 fi
 
 if [[ $encrypt_os = yes ]]; then
-    os_enc_message=", y sera cifrado."
+	os_enc_message=", y sera cifrado."
 fi
 
 if [[ -z $home_dev ]]; then
-    home_dev_message="--> /home no estara en una particion separada."
+	home_dev_message="--> /home no estara en una particion separada."
 elif
 	[[ $no_format = "yes" ]]; then
 		home_dev_message="--> /home se instalara en $home_dev"
 else
-    home_dev_message="--> /home se instalara en $home_dev y formateado como $fs_type_home"
+	home_dev_message="--> /home se instalara en $home_dev y formateado como $fs_type_home"
 fi
 
 if [[ -n $home_dev ]] && [[ $encrypt_home = yes ]]; then
-    home_enc_message=", y sera cifrado."
+	home_enc_message=", y sera cifrado."
 fi
 
 if [[ -n $boot_dev ]]; then
@@ -848,7 +843,7 @@ if [[ -n $boot_dev ]]; then
 fi
 
 if [[ $encrypt_os = yes ]] || [[ $encrypt_home = yes ]]; then
-    proceed_message="***  IF YOU PROCEED, YOU WILL NEED TO RESPOND TO SOME QUESTIONS IN THE TERMINAL.   Be prepared to create 
+	proceed_message="***  IF YOU PROCEED, YOU WILL NEED TO RESPOND TO SOME QUESTIONS IN THE TERMINAL.   Be prepared to create 
     passphrases for any encrypted partitions (several times each.) When you see the progress bar come up, you can take a break."
 fi
 
@@ -865,8 +860,6 @@ if [[ $no_format = "yes" ]]; then
 else
 	install_dev_message="--> El sistema operativo se instalara en $install_dev y formateado como $fs_type_os$os_enc_message"
 fi
-
-
 
 yad "$miicono" --center --text-align=fill --borders=6 --info --title=Summary --button="Proceder con la instalacion.":0 --button="Salir":1 --text="Por favor CIERRE cualquier otra aplicacion en ejecucion.
 
@@ -890,113 +883,114 @@ if [[ $? != 0 ]]; then
 fi
 
 cleanup () {
-echo -e "\n @@@ Cleaning up...\n" >> "$error_log"
+echo -e "\n @@@ Limpiando...\n" >> "$error_log"
 if $(df | grep -q /target/proc/) ; then
-    umount /target/proc/
+	umount /target/proc/
 fi
 
 if $(df | grep -q /target/dev/) ; then
-    umount /target/dev/
+	umount /target/dev/
 fi
 
 if $(df | grep -q /target/sys/) ; then
-    umount /target/sys/
+	umount /target/sys/
 fi
 
 if $(df | grep -q $boot_dev) ; then
-    umount -l $boot_dev
+	umount -l $boot_dev
 fi
 
 if $(df | grep -q /target_boot) ; then
-    umount -l /target_boot/
+	umount -l /target_boot/
 fi
 
 if $(df | grep -q /target_home) ; then
-    umount -l /target_home/
+	umount -l /target_home/
 fi
 
 if $(df | grep -q $home_dev) ; then
-    umount $home_dev
+	umount $home_dev
 fi
 
 if $(df | grep -q "\/dev\/mapper\/home_fs") ; then
-    umount /dev/mapper/home_fs
+	umount /dev/mapper/home_fs
 fi
 
 if [[ -h /dev/mapper/home_fs ]]; then
-    cryptsetup luksClose home_fs
+	cryptsetup luksClose home_fs
 fi
 
 if $(df | grep -q /target) ; then
-    umount -l /target/
+	umount -l /target/
 fi
 
 if $(df | grep -q $install_dev) ; then
-    umount $install_dev
+	umount $install_dev
 fi    
 
 if $(df | grep "\/dev\/mapper\/root_fs") ; then
-    umount /dev/mapper/root_fs
+	umount /dev/mapper/root_fs
 fi
 
 if [[ -h /dev/mapper/root_fs ]]; then
-    cryptsetup luksClose /dev/mapper/root_fs
+	cryptsetup luksClose /dev/mapper/root_fs
 fi
 
 if [[ -d /target ]]; then
-    rm -rf /target
+	rm -rf /target
 fi
 
 if [[ -d /target_home ]]; then
-    rm -rf /target_home
+	rm -rf /target_home
 fi
 
 if [[ -d /target_boot ]]; then
-    rm -rf /target_boot
+	rm -rf /target_boot
 fi
 }
 
 cleanup
 
 if [[ $write_random = "yes" ]]; then
-    if [[ $encrypt_os = "yes" ]]; then
+	if [[ $encrypt_os = "yes" ]]; then
        		exec 2>&1
-        dd if=/dev/urandom of="$install_dev"
-        exec 2>>"$error_log"
-    fi  
+		dd if=/dev/urandom of="$install_dev"
+		exec 2>>"$error_log"
+	fi  
 fi
 
 if [[ $write_random = "yes" ]]; then
-    if [[ $encrypt_home = "yes" ]]; then
+	if [[ $encrypt_home = "yes" ]]; then
 		exec 2>&1
-        dd if=/dev/urandom of="$home_dev"
-        exec 2>>"$error_log"
-    fi  
+		dd if=/dev/urandom of="$home_dev"
+		exec 2>>"$error_log"
+	fi  
 fi
 
 if [[ $write_zero = "yes" ]]; then
-    dd if=/dev/zero of="$install_dev"
-    if [[ $sep_home = "yes" ]]; then
+	dd if=/dev/zero of="$install_dev"
+	if [[ $sep_home = "yes" ]]; then
 		exec 2>&1
-        dd if=/dev/zero of="$home_dev"
-
-        exec 2>>"$error_log"
-    fi
-    if [[ $sep_boot = "yes" ]]; then
+		dd if=/dev/zero of="$home_dev"
+		exec 2>>"$error_log"
+	fi
+	if [[ $sep_boot = "yes" ]]; then
 		exec 2>&1
-        dd if=/dev/zero of="$boot_dev"
-        exec 2>>"$error_log"
-    fi
+		dd if=/dev/zero of="$boot_dev"
+		exec 2>>"$error_log"
+	fi
 fi
 
 mkdir /target ;  check_exit
+
 if [[ $encrypt_os = yes ]]; then
-    cryptsetup luksFormat "$install_dev" ; check_exit
-    cryptsetup luksOpen "$install_dev" root_fs ; check_exit
-    install_part="/dev/mapper/root_fs"
+	cryptsetup luksFormat "$install_dev" ; check_exit
+	cryptsetup luksOpen "$install_dev" root_fs ; check_exit
+	install_part="/dev/mapper/root_fs"
 else
-    install_part="$install_dev"
+	install_part="$install_dev"
 fi 
+
 if [[ $no_format != "yes" ]]; then
 	if [[ -f "$parti" ]]; then
 		echo 1 > /dev/null
@@ -1009,59 +1003,57 @@ if [[ $no_format != "yes" ]]; then
 		fi
 	fi
 fi
+
 mount "$install_part" /target ; check_exit 
 
 if [[ -n $home_dev ]]; then
-    mkdir /target_home ; check_exit
-    if [[ $encrypt_home = yes ]]; then
-        cryptsetup luksFormat "$home_dev"
-        check_exit
-        cryptsetup luksOpen "$home_dev" home_fs
-        check_exit
-        home_part="/dev/mapper/home_fs"
-    else
-        home_part=$home_dev
+	mkdir /target_home ; check_exit
+	if [[ $encrypt_home = yes ]]; then
+		cryptsetup luksFormat "$home_dev"
+		check_exit
+		cryptsetup luksOpen "$home_dev" home_fs
+		check_exit
+		home_part="/dev/mapper/home_fs"
+	else
+		home_part=$home_dev
 	fi
 	if [[ $no_format != "yes" ]]; then
-	    if [[ $fs_type_os = ext4 ]];then
-		mkfs.$fs_type_home -F "$home_part" ; check_exit
-		tune2fs -r 10000 "$home_part" ; check_exit
-	    else
-		mkfs.$fs_type_home -f "$home_part" ; check_exit
-	    fi
+		if [[ $fs_type_os = ext4 ]];then
+			mkfs.$fs_type_home -F "$home_part" ; check_exit
+			tune2fs -r 10000 "$home_part" ; check_exit
+		else
+			mkfs.$fs_type_home -f "$home_part" ; check_exit
+		fi
 	fi
-    mount "$home_part" /target_home ; check_exit
+	mount "$home_part" /target_home ; check_exit
 	sep_home_opt="--exclude=/home/*"
 fi
 
 if [[ -n $boot_dev ]]; then
-    mkdir /target_boot ; check_exit
-    if [[ $no_format != "yes" ]]; then
-	if [[ -f /sys/firmware/efi/runtime ]]; then
-		echo 1 > /dev/null
-	else
-		if [[ $fs_type_os = ext4 ]]; then
-			mkfs.$fs_type_boot -F $boot_dev ; check_exit
+	mkdir /target_boot ; check_exit
+	if [[ $no_format != "yes" ]]; then
+		if [[ -f /sys/firmware/efi/runtime ]]; then
+			echo 1 > /dev/null
 		else
-			mkfs.$fs_type_boot -f $boot_dev ; check_exit
+			if [[ $fs_type_os = ext4 ]]; then
+				mkfs.$fs_type_boot -F $boot_dev ; check_exit
+			else
+				mkfs.$fs_type_boot -f $boot_dev ; check_exit
+			fi
 		fi
 	fi
-    fi
-    mount $boot_dev /target_boot
-    sep_boot_opt="--exclude=/boot/*"
+	mount $boot_dev /target_boot
+	sep_boot_opt="--exclude=/boot/*"
 fi
 
-rsync -av / /target/ --exclude-from="$rsync_excludes" ${sep_home_opt} ${sep_boot_opt} | \
-tee >(yad "$miicono" --center --width=400 --fixed --progress --pulsate --auto-close --skip-taskbar --center --title="INSTALANDO" --progress-text="Copiando el sistema a la nueva particion, por favor espere.")
+rsync -av / /target/ --exclude-from="$rsync_excludes" ${sep_home_opt} ${sep_boot_opt} | tee >(yad "$miicono" --center --width=400 --fixed --progress --pulsate --auto-close --skip-taskbar --center --title="INSTALANDO" --progress-text="Copiando el sistema a la nueva particion, por favor espere.")
 
 if ! [[ -z $home_dev ]]; then
-    rsync -av /home/ /target_home/ --exclude-from="$home_boot_excludes" | \
-tee >(yad "$miicono" --auto-close --progress --pulsate --width=350 --title="Copiando carpeta home a la nueva particion.")
+	rsync -av /home/ /target_home/ --exclude-from="$home_boot_excludes" | tee >(yad "$miicono" --auto-close --progress --pulsate --width=350 --title="Copiando carpeta home a la nueva particion.")
 fi
 
 if [[ -n $boot_dev ]]; then
-    rsync -av /boot/ /target_boot/ --exclude-from="$home_boot_excludes" | \
-tee >(yad "$miicono" --auto-close --progress --pulsate --width=350 --title="Copiando archivos a la particion boot.")
+	rsync -av /boot/ /target_boot/ --exclude-from="$home_boot_excludes" | tee >(yad "$miicono" --auto-close --progress --pulsate --width=350 --title="Copiando archivos a la particion boot.")
 fi
 
 if ! [[ $use_existing_swap = "yes" ]]; then
@@ -1071,10 +1063,11 @@ if ! [[ $use_existing_swap = "yes" ]]; then
 fi
 
 if [[ -f /target/usr/sbin/update-initramfs.distrib ]]; then
-    cp /target/usr/sbin/update-initramfs.distrib /target/usr/sbin/update-initramfs
+	cp /target/usr/sbin/update-initramfs.distrib /target/usr/sbin/update-initramfs
 fi
+
 if [[ -f /target/usr/sbin/update-initramfs.debian ]]; then
-    cp /target/usr/sbin/update-initramfs.debian /target/usr/sbin/update-initramfs
+	cp /target/usr/sbin/update-initramfs.debian /target/usr/sbin/update-initramfs
 fi
 
 if [[ -f /target/etc/pmount.allow ]]; then
@@ -1090,16 +1083,15 @@ if [[ -e /target/usr/bin/updatedb.mlocate ]]; then
 fi
 
 if [[ $disable_auto_desktop = "yes" ]]; then
-
 	#gdm
-    if [[ -f /target/etc/gdm/gdm.conf ]]; then
-        sed -i 's/^AutomaticLogin/#AutomaticLogin/' /target/etc/gdm/gdm.conf
-    fi
+	if [[ -f /target/etc/gdm/gdm.conf ]]; then
+		sed -i 's/^AutomaticLogin/#AutomaticLogin/' /target/etc/gdm/gdm.conf
+	fi
 
 	#gdm3
-    if [[ -f /target/etc/gdm3/daemon.conf ]]; then
-        sed -i 's/^AutomaticLogin/#AutomaticLogin/' /target/etc/gdm3/daemon.conf
-    fi
+	if [[ -f /target/etc/gdm3/daemon.conf ]]; then
+		sed -i 's/^AutomaticLogin/#AutomaticLogin/' /target/etc/gdm3/daemon.conf
+	fi
 
 	#lightdm
 	if [[ -f /target/etc/lightdm/lightdm.conf ]]; then
@@ -1108,29 +1100,25 @@ if [[ $disable_auto_desktop = "yes" ]]; then
 
 	#kdm
 	if [ -f /target/etc/default/kdm.d/live-autologin ]; then
-	rm -f /target/etc/default/kdm.d/live-autologin
+		rm -f /target/etc/default/kdm.d/live-autologin
 	fi
-
 	if [ -f /target/etc/kde3/kdm/kdmrc ]; then
-	sed -i -e 's/^AutoLogin/#AutoLogin/g' /target/etc/kde3/kdm/kdmrc
-	sed -i -e 's/^AutoReLogin/#AutoReLogin/g' /target/etc/kde3/kdm/kdmrc
+		sed -i -e 's/^AutoLogin/#AutoLogin/g' /target/etc/kde3/kdm/kdmrc
+		sed -i -e 's/^AutoReLogin/#AutoReLogin/g' /target/etc/kde3/kdm/kdmrc
 	fi
-
 	if [ -f /target/etc/kde4/kdm/kdmrc ]; then
-	sed -i -e 's/^AutoLogin/#AutoLogin/g' /target/etc/kde4/kdm/kdmrc
-	sed -i -e 's/^AutoReLogin/#AutoReLogin/g' /target/etc/kde4/kdm/kdmrc
+		sed -i -e 's/^AutoLogin/#AutoLogin/g' /target/etc/kde4/kdm/kdmrc
+		sed -i -e 's/^AutoReLogin/#AutoReLogin/g' /target/etc/kde4/kdm/kdmrc
 	fi
 
 	#trinity
 	if [[ -f /target/etc/default/kdm-trinity.d/live-autologin ]]; then
 		sed -i 's/^AUTOLOGIN/#AUTOLOGIN/g' /target/etc/default/kdm-trinity.d/live-autologin
 	fi
-	
 	if [ -f /target/etc/trinity/kdm/kdmrc ]; then
-	sed -i -e 's/^AutoLogin/#AutoLogin/g' /target/etc/trinity/kdm/kdmrc
-	sed -i -e 's/^AutoReLogin/#AutoReLogin/g' /target/etc/trinity/kdm/kdmrc
+		sed -i -e 's/^AutoLogin/#AutoLogin/g' /target/etc/trinity/kdm/kdmrc
+		sed -i -e 's/^AutoReLogin/#AutoReLogin/g' /target/etc/trinity/kdm/kdmrc
 	fi
-
 fi	
 
 if [[ $disable_auto_console = "yes" ]]; then
@@ -1141,26 +1129,26 @@ if [[ $disable_auto_console = "yes" ]]; then
 fi
 
 if ! [[ $new_hostname = $HOSTNAME ]]; then
-		sed -i "s/$HOSTNAME/$new_hostname/" /target/etc/hostname
-		sed -i "s/$HOSTNAME/$new_hostname/g" /target/etc/hosts
+	sed -i "s/$HOSTNAME/$new_hostname/" /target/etc/hostname
+	sed -i "s/$HOSTNAME/$new_hostname/g" /target/etc/hosts
 fi
 
 if [[ $encrypt_os != "yes" ]]; then
 	if [[ $use_uuid = yes ]]; then
 		install_part="$(blkid -s UUID $install_dev | awk '{ print $2 }' | sed 's/\"//g')"
 	elif [[ $use_labels = yes ]]; then
-			rootfslabel=$(/sbin/blkid -c /dev/null -s LABEL $install_dev | awk -F"\"" '{ print $2 }')
+		rootfslabel=$(/sbin/blkid -c /dev/null -s LABEL $install_dev | awk -F"\"" '{ print $2 }')
+		if [[ -n $rootfslabel ]]; then
+			install_part="LABEL=$rootfslabel"
+		else
+			rootfslabel=$(yad "$miicono" --center --entry --title="Etiqueta del Sistema de Archivos" --text="Enter a disk label for $install_dev" --width=300 --button="ACEPTAR":0)
 			if [[ -n $rootfslabel ]]; then
+				e2label "$install_dev"  "$rootfslabel"
 				install_part="LABEL=$rootfslabel"
 			else
-				rootfslabel=$(yad "$miicono" --center --entry --title="Etiqueta del Sistema de Archivos" --text="Enter a disk label for $install_dev" --width=300 --button="ACEPTAR":0)
-				if [[ -n $rootfslabel ]]; then
-					e2label "$install_dev"  "$rootfslabel"
-					install_part="LABEL=$rootfslabel"
-				else
-					install_part="$install_dev"
-				fi
+				install_part="$install_dev"
 			fi
+		fi
 	else
 		install_part="$install_dev"
 	fi
@@ -1194,12 +1182,12 @@ if ! [[ -z $home_dev ]]; then
 			home_part="$home_dev"
 		fi
 	fi
-if [[ $fs_type_home = ext4 ]]; then
-    echo -e "$home_part\t/home\t$fs_type_home\tdefaults,noatime,nodelalloc,commit=60,inode_readahead_blks=64,discard,errors=remount-ro\t0\t3" >> /target/etc/fstab
-else
-    echo -e "$home_part\t/home\t$fs_type_home\tdefaults\t0\t3" >> /target/etc/fstab
-fi
-    check_exit
+	if [[ $fs_type_home = ext4 ]]; then
+		echo -e "$home_part\t/home\t$fs_type_home\tdefaults,noatime,nodelalloc,commit=60,inode_readahead_blks=64,discard,errors=remount-ro\t0\t3" >> /target/etc/fstab
+	else
+		echo -e "$home_part\t/home\t$fs_type_home\tdefaults\t0\t3" >> /target/etc/fstab
+	fi
+	check_exit
 fi
 
 if [[ -n $boot_dev ]]; then
@@ -1252,20 +1240,6 @@ fi
 mount -B /dev/ /target/dev/ ; check_exit 
 mount -B /proc/ /target/proc/ ; check_exit 
 mount -B /sys/ /target/sys/ ; check_exit 
-
-if type -p freshclam ; then
-	if [[ $enable_freshclam = "yes" ]]; then
-		if ! [[ -h /target/etc/rc2.d/S02clamav-freshclam ]]; then
-			chroot /target update-rc.d clamav-freshclam defaults
-		fi
-	fi
-fi
-
-if [[ -f /etc/ssh/sshd_config ]]; then
-	if [[ $root_ssh = "no" ]]; then
-		sed -i~ 's/PermitRootLogin yes/PermitRootLogin no/' /target/etc/ssh/sshd_config
-	fi
-fi
 
 if [[ -n $boot_dev ]]; then
     chroot /target mount $boot_dev /boot
@@ -1346,7 +1320,6 @@ fi
 
 if [[ $install = "expert" ]]; then
     yad "$miicono" --center --text-align=fill --borders=6 --title="Edicion de /etc/sudoers" --button="Si":0 --button=No:1 --text="Puede que necesite editar /etc/sudoers para comentar la linea que da a $oldname poder absoluto, o reemplace $oldname con $newname.
- 
 Editar /etc/sudoers ahora?" 
 	ans="$?"
     if [[ $ans = "0" ]]; then
@@ -1397,6 +1370,6 @@ ans="$?"
 case $ans in
 	0) poweroff ;;
 	1) reboot ;;
-	2) exit 0;;
+	2) exit 0 ;;
 esac
 exit 0
