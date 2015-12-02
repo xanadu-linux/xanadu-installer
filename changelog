@@ -1,4 +1,16 @@
-commit b4f49f3d4ee37a8677439144e0943fd0b2aebde1 (HEAD, origin/master, origin/HEAD, master)
+commit c74aefadf48e5c57d798d83e719a12586dfa8242 (HEAD, origin/master, origin/HEAD, master)
+Author: jose perez <sinfallas@gmail.com>
+Date:   Tue Dec 1 21:07:58 2015 -0430
+
+    * se eliminan todas las referencias al pre y post instalador
+
+commit 718348821256d775f6e33111104b37884f72fb88
+Author: jose perez <sinfallas@gmail.com>
+Date:   Tue Dec 1 20:39:49 2015 -0430
+
+    * changelog
+
+commit b4f49f3d4ee37a8677439144e0943fd0b2aebde1
 Author: jose perez <sinfallas@gmail.com>
 Date:   Tue Dec 1 20:39:19 2015 -0430
 
