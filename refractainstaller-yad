@@ -10,6 +10,7 @@ parti="/tmp/particionador"
 swapfile_blocksize="1024"
 swapfile_count="262144"
 pmount_fixed="no"
+fs_type_boot="ext4"
 
 source /usr/bin/variables
 rm -f "$parti"
@@ -545,66 +546,54 @@ if [[ $sep_boot = "no" ]]; then
 fi
 
 choose_grub () {
-yad "$miicono" --center --text-align=fill --borders=6 --title="Instalacion de GRUB" --text="Seleccione la ubicacion para instalar GRUB. La opcion comun es colocarlo en el MBR del primer disco (/dev/sda).  
+	yad "$miicono" --center --text-align=fill --borders=6 --title="Instalacion de GRUB" --text="Seleccione la ubicacion para instalar GRUB. La opcion comun es colocarlo en el MBR del primer disco (/dev/sda).  
 
 		Seleccione MBR para instalar al MBR de cualquier disco.
 		Seleccione Particion para instalar a una particion.
 		Seleccione No Bootloader para proceder sin un bootloader. 
 		Seleccione Exit para salir de este programa.
-		" \
---button=MBR:0 --button=Partition:1 --button="Sin Bootloader":2 --button="Salir":3
-answer="$?"
-
-if [[ $answer = 0 ]]; then
-grub_dev=$(find /dev -mindepth 1 -maxdepth 1  -name "*[sh]d[a-z]" \
-  | sort | awk '{print "\n" $0 }' \
-  | yad "$miicono" --center --list --separator="" --title=Bootloader --text="Selecione la ubicacion para instalar el bootloader.
-" \
-  --column ' ' --column 'Disco Duro' --height=200)
-
-	if [[ -z $grub_dev ]]; then
-		yad --center --title=Error --window-icon=error --button="Si, Estoy seguro.":0 --button="Ir atras":1 --text="Ningun bootloader sera instalado. Esta seguro de continuar?"
+		" --button=MBR:0 --button=Partition:1 --button="Sin Bootloader":2 --button="Salir":3
+	answer="$?"
+	if [[ $answer = 0 ]]; then
+		grub_dev=$(find /dev -mindepth 1 -maxdepth 1  -name "*[sh]d[a-z]" | sort | awk '{print "\n" $0 }' | yad "$miicono" --center --list --separator="" --title=Bootloader --text="Selecione la ubicacion para instalar el bootloader.
+" --column ' ' --column 'Disco Duro' --height=200)
+		if [[ -z $grub_dev ]]; then
+			yad --center --title=Error --window-icon=error --button="Si, Estoy seguro.":0 --button="Ir atras":1 --text="Ningun bootloader sera instalado. Esta seguro de continuar?"
 			if [[ $? = 1 ]]; then
 				choose_grub
 			fi
-	elif ! [[ -b $grub_dev ]]; then
-		yad --center --title=Error --window-icon=error --button="Salir":0 --button="Ir atras":1 --text="Algo esta mal.  $grub_dev no es un dispositivo de bloques."
+		elif ! [[ -b $grub_dev ]]; then
+			yad --center --title=Error --window-icon=error --button="Salir":0 --button="Ir atras":1 --text="Algo esta mal.  $grub_dev no es un dispositivo de bloques."
 			if [[ $? = 0 ]]; then
 				exit 1
 			else
 				choose_grub
 			fi
-	fi
-
-elif [[ $answer = 1 ]]; then
-grub_partition=$(find /dev -mindepth 1 -maxdepth 1  -name "*[sh]d[a-z][1-9]*" \
-  | sort | awk '{print "\n" $0 }' \
-  | yad "$miicono" --center --list --title="Bootloader" --text="Seleccione una particion para el bootloader (GRUB)." --separator="" --column ' ' --column 'Particiones' --height=380 --width=150)
-
-	if [[ -z $grub_partition ]]; then
-		yad --center --title=Error --window-icon=error --button="Si, Estoy seguro.":0 --button="Ir atras":1 --text="Ningun bootloader sera instalado. Esta seguro de continuar?"
+		fi
+	elif [[ $answer = 1 ]]; then
+		grub_partition=$(find /dev -mindepth 1 -maxdepth 1  -name "*[sh]d[a-z][1-9]*" | sort | awk '{print "\n" $0 }' | yad "$miicono" --center --list --title="Bootloader" --text="Seleccione una particion para el bootloader (GRUB)." --separator="" --column ' ' --column 'Particiones' --height=380 --width=150)
+		if [[ -z $grub_partition ]]; then
+			yad --center --title=Error --window-icon=error --button="Si, Estoy seguro.":0 --button="Ir atras":1 --text="Ningun bootloader sera instalado. Esta seguro de continuar?"
 			if [[ $? = 1 ]]; then
 				choose_grub
 			fi
-	elif ! [[ -b $grub_partition ]]; then
-		yad --center --title=Error --window-icon=error --button="Salir":0 --button="Ir atras":1 --text="Algo esta mal.  $grub_partition no es un dispositivo de bloques."
+		elif ! [[ -b $grub_partition ]]; then
+			yad --center --title=Error --window-icon=error --button="Salir":0 --button="Ir atras":1 --text="Algo esta mal.  $grub_partition no es un dispositivo de bloques."
 			if [[ $? = 0 ]]; then
 				exit 1
 			else
 				choose_grub
 			fi
-	fi
-
-
-elif [[ $answer = 2 ]]; then
-	yad "$miicono" --center --text-align=fill --borders=6 --title=Bootloader --text="  Procediendo sin un bootloader. 
+		fi
+	elif [[ $answer = 2 ]]; then
+		yad "$miicono" --center --text-align=fill --borders=6 --title=Bootloader --text="  Procediendo sin un bootloader. 
   Necesitara de un procedimiento especial para bootear su sistema. Be sure that you know what you're doing." --button="Proceder":0 --button="Salir":1
 		if [[ $? = 1 ]]; then
 			exit 0
 		fi
-elif [[ $answer = 3 ]]; then
-	exit 0
-fi
+	elif [[ $answer = 3 ]]; then
+		exit 0
+	fi
 }
 
 if [[ $install = "expert" ]]; then
@@ -620,9 +609,7 @@ else
 fi
 
 choose_boot () {
-boot_dev=$(find /dev -mindepth 1 -maxdepth 1  -name "*[sh]d[a-z][1-9]*" \
-  | sort | awk '{print "\n" $0 }' \
-  | yad "$miicono" --center --list --title="particion /boot" --text="Seleccione una particion para /boot." --separator="" --column ' ' --column 'Particiones' --height=400 --width=150 --button="ACEPTAR":0)
+	boot_dev=$(find /dev -mindepth 1 -maxdepth 1  -name "*[sh]d[a-z][1-9]*" | sort | awk '{print "\n" $0 }' | yad "$miicono" --center --list --title="particion /boot" --text="Seleccione una particion para /boot." --separator="" --column ' ' --column 'Particiones' --height=400 --width=150 --button="ACEPTAR":0)
 }
 
 if [[ -f "$parti" ]]; then
@@ -631,22 +618,19 @@ else
 	choose_boot
 fi
 
-fs_type_boot="ext4"
-
 choose_root () {
-install_dev1=$(find /dev -mindepth 1 -maxdepth 1 -name "*[sh]d[a-z][1-9]*" | sort)
-install_dev2=$(find /dev/mapper -mindepth 1 -maxdepth 1 | grep -v control)
-install_dev3="$install_dev1 $(echo -e '\n'$install_dev2)"
-install_dev4=$(echo "$install_dev3" | yad --center --no-click --list --title="Particion raiz" --text="Seleccione una particion para instalar el sistema operativo." --column 'Particiones' --height 380 --width 150 --button="OK":0)
-install_dev=$(echo $install_dev4 | sed 's/.$//g')
-
-if [[ -z $install_dev ]]; then
-    yad --center --window-icon=error --title=Error --button="Ir atras":0 --button="Salir":1 --text="No selecciono nada. Debe escoger una particion para la instalacion. Que quiere hacer?"
-        if [[ $? = 0 ]]; then
-            choose_root
-        else
-            exit 1
-        fi
+	install_dev1=$(find /dev -mindepth 1 -maxdepth 1 -name "*[sh]d[a-z][1-9]*" | sort)
+	install_dev2=$(find /dev/mapper -mindepth 1 -maxdepth 1 | grep -v control)
+	install_dev3="$install_dev1 $(echo -e '\n'$install_dev2)"
+	install_dev4=$(echo "$install_dev3" | yad --center --no-click --list --title="Particion raiz" --text="Seleccione una particion para instalar el sistema operativo." --column 'Particiones' --height 380 --width 150 --button="OK":0)
+	install_dev=$(echo $install_dev4 | sed 's/.$//g')
+	if [[ -z $install_dev ]]; then
+		yad --center --window-icon=error --title=Error --button="Ir atras":0 --button="Salir":1 --text="No selecciono nada. Debe escoger una particion para la instalacion. Que quiere hacer?"
+		if [[ $? = 0 ]]; then
+			choose_root
+		else
+			exit 1
+		fi
 #elif ! [[ -b $install_dev ]]; then
 #    yad --center --text-align=fill --borders=6 --window-icon=error --title=Error  --button="Ir atras":0 --button="Salir":1 --text="    Algo esta mal. Tal vez usted marco mas de una casilla. Usted dijo que quiere instalar el sistema en: $install_dev"
 #        if [[ $? = 0 ]]; then
@@ -654,10 +638,10 @@ if [[ -z $install_dev ]]; then
 #        else
 #            exit 1
 #        fi
-elif [[ $install_dev = $boot_dev ]]; then
-    yad --center --window-icon=error --title=Error --text="Selecciono la misma particion para la raiz y para /boot. Intente de nuevo." --button="ACEPTAR":0
-        choose_root
-fi
+	elif [[ $install_dev = $boot_dev ]]; then
+		yad --center --window-icon=error --title=Error --text="Selecciono la misma particion para la raiz y para /boot. Intente de nuevo." --button="ACEPTAR":0
+		choose_root
+	fi
 }
 
 if [[ -f "$parti" ]]; then
@@ -668,24 +652,24 @@ fi
 
 migrub=$(echo $boot_dev | sed 's/.$//g')
 if [[ $install = "simple" ]]; then
-    grub_dev=$(echo $migrub)
+	grub_dev=$(echo $migrub)
 fi
 
 choose_fs_os () {
-fs_type_os=$(yad --center --list --title="Sistema de archivos para la raiz" --text="Que sistema de archivos le gustaria para $install_dev?" \
+	fs_type_os=$(yad --center --list --title="Sistema de archivos para la raiz" --text="Que sistema de archivos le gustaria para $install_dev?" \
   --separator="" --column "Formato" --height=200 --button="ACEPTAR":0 \
   "xfs" \
   "btrfs" \
   "ext4")
-if [[ -z $fs_type_os ]]; then
-        yad --center --window-icon=error --title=Error --button="Ir atras":0 --button="Salir":1 --text="Debe escoger un sistema de archivos para
+	if [[ -z $fs_type_os ]]; then
+		yad --center --window-icon=error --title=Error --button="Ir atras":0 --button="Salir":1 --text="Debe escoger un sistema de archivos para
 el sistema operativo"
-    if [[ $? = 0 ]]; then
-        choose_fs_os
-    else
-        exit 1
-    fi
-fi  
+		if [[ $? = 0 ]]; then
+			choose_fs_os
+		else
+			exit 1
+		fi
+	fi  
 }
 
 if [[ $install = "expert" ]]; then
@@ -695,10 +679,10 @@ if [[ $install = "expert" ]]; then
 		choose_fs_os
 	fi
 else
-    if [[ $grubversion = "grub-pc" ]]; then
-        fs_type_os="ext4"
-    else
-	fs_type_os="ext4"
+	if [[ $grubversion = "grub-pc" ]]; then
+		fs_type_os="ext4"
+	else
+		fs_type_os="ext4"
 	fi
 fi
 
