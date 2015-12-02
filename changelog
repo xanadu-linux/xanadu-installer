@@ -1,4 +1,16 @@
-commit 906bfa7bbe7f2ae6e05fadcd417dbfe0c6609f76 (HEAD, origin/master, origin/HEAD, master)
+commit b4f49f3d4ee37a8677439144e0943fd0b2aebde1 (HEAD, origin/master, origin/HEAD, master)
+Author: jose perez <sinfallas@gmail.com>
+Date:   Tue Dec 1 20:39:19 2015 -0430
+
+    * se agrega la rutina para descargar la ultima version del navegador desde github
+
+commit f322340978b17630d18666104f85f7c6d90756e9
+Author: jose perez <sinfallas@gmail.com>
+Date:   Tue Dec 1 20:04:08 2015 -0430
+
+    * changelog
+
+commit 906bfa7bbe7f2ae6e05fadcd417dbfe0c6609f76
 Author: jose perez <sinfallas@gmail.com>
 Date:   Tue Dec 1 20:03:40 2015 -0430
 
