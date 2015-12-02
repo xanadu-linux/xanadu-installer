@@ -4,8 +4,8 @@ LC_ALL=C
 error_log="/var/log/installer_error.log"
 run_preinstall="yes"
 run_postinstall="yes"
-rsync_excludes="/usr/lib/refractainstaller/installer_exclude.list"
-home_boot_excludes="/usr/lib/refractainstaller/home_boot_exclude.list"
+rsync_excludes="/tmp/installer_exclude.list"
+home_boot_excludes="/tmp/home_boot_exclude.list"
 swapfile_blocksize="1024"
 swapfile_count="262144"
 pmount_fixed="no"
@@ -15,51 +15,210 @@ miicono="--window-icon=/usr/share/icons/install-icon.png"
 source /usr/bin/variables
 rm -f /tmp/particionador
 exec 2>"$error_log"
+============================================
 
-[[ $DISPLAY ]] || { echo "No hay un servidor X corriendo. Saliendo..." ; exit 1 ; }
-
-if [[ $USER != root ]]; then
-	yad --title=Error --window-icon=error --text="DEBES SER ROOT"
-	exit 1
-fi
-
-if ! [[ -d /lib/live/mount/rootfs ]]; then
-	live_session_warning="ALERTA: No se esta ejecutando desde un Live-CD/USB o esta usando una configuracion no soportada"
-fi
-
-yad "$miicono" --center --text-align=fill --borders=6 --title="Instalar Xanadu GNU/Linux" --button="Instalacion simple":0 --button="Instalacion experta":1 --button="Salir":2 --text="$live_session_warning
-
- Esta aplicacion instalara Xanadu GNU/Linux en su disco duro.
-
- Cantidad de RAM minima:	512000 kB.
- Cantidad de RAM recomendada:	1073740 kB.
- Cantidad de RAM detectada:	$memoria kB.
-
- Velocidad del CPU minima:	1000.000 MHz.
- Velocidad del CPU recomendada:	1500.000 MHz.
- Velocidad del CPU detectada:	$cpu MHz.
-"
-mode="$?"
-	case $mode in
-		0) install="simple" ;;
-		1) install="expert" ;;
-		2) exit 0 ;;
-	esac
-
-grubversion=$(dpkg -l | grep -v bin | grep -v doc | awk '$2 ~ "grub-[pc]" {print $2}' | grep -v amd64 | grep -v i386 | grep -v common)
-
-check_exit () {
-if [[ $? -ne 0 ]]; then
-	yad --center --question --title="Error" --window-icon=error --button="Continuar":0 --button="Salir ahora":1 --text="Error detectado: $?  $error_message
-\Vea $error_log para detalles. \n\nEsto puede no ser fatal.. Presione \"Continuar\" para proceder"
-	if [[ $? -ne 0 ]]; then
-		cleanup
-		exit 1
+function advert () {
+	yad --skip-taskbar --button=ACEPTAR:0 --button=SALIR:1 --fixed --center --text-align=fill --borders=6 --title="ADVERTENCIA" --text="Esta opción eliminara toda la informacion del disco y no podra revertirse."
+	if [[ $? = 0 ]] ; then
+		echo "1" > /del/null
+	else
+		source refractainstaller-yad
 	fi
-fi
 }
 
-copy_excludes () {
+function dialogopart () {
+	dispositivo=$(fdisk -l | grep "Disco" | awk '{print $2}' | sed 's/.$//g' | yad --center --no-click --list --title="Disco a particionar" --text="Seleccione el disco que desea particionar." --separator="" --column 'Dispositivo' --height 380 --width 150 --button="ACEPTAR":0)
+	if [[ -z "$dispositivo" ]] ; then
+		yad --center --window-icon=error --title="Error" --button="Ir atras":0 --button="Salir":1 --text="No selecciono nada. Debe escoger un disco."
+		if [[ $? = 0 ]] ; then
+			source refractainstaller-yad
+		else
+			exit 1
+		fi
+	fi
+	for i in $(fdisk -l "$dispositivo" | grep "swap" | awk '{print $1}'); do
+		swapoff $i
+	done	
+	for i in $(fdisk -l "$dispositivo" | grep "/dev" | grep -v "Disco" | awk '{print $1}'); do
+		umount -f $i
+	done
+	lvremove -f $(pvdisplay $(echo $dispositivo"*") | grep "VG" | awk '{print $3}' | uniq)
+	dd if=/dev/zero of="$dispositivo" bs=1024k count=1
+	partprobe "$dispositivo"
+	if [[ $(arch) = x86_64 ]]; then
+		if [[ -f /sys/firmware/efi/runtime ]]; then
+			parted -s "$dispositivo" -- mklabel gpt
+			parted -a optimal -s "$dispositivo" -- mkpart primary fat32 3 260
+			parted "$dispositivo" set 1 esp on
+			mkfs.vfat -n BOOT -F 32 $(fdisk -l "$dispositivo" | grep "EFI" | awk '{print $1}')
+			touch /tmp/efi
+		else
+			parted -s "$dispositivo" -- mklabel gpt
+			parted -a optimal -s "$dispositivo" -- mkpart non-fs 2 3
+			parted "$dispositivo" set 1 bios_grub on
+			parted -a optimal -s "$dispositivo" -- mkpart primary ext4 3 260
+			parted "$dispositivo" set 2 boot on
+			mkfs.ext4 -L boot -F $(fdisk -l "$dispositivo" | grep "EFI" | awk '{print $1}')
+		fi
+	else
+		parted -s "$dispositivo" -- mklabel msdos
+		parted -a optimal -s "$dispositivo" -- mkpart primary ext4 3 260
+		parted "$dispositivo" set 1 boot on
+		mkfs.ext4 -L boot -F $(fdisk -l "$dispositivo" | grep "Linux" | awk '{print $1}')
+	fi
+	parted -a optimal -s "$dispositivo" -- mkpart primary linux-swap 260 1330
+	mkswap -L swap -f $(fdisk -l "$dispositivo" | grep "swap" | awk '{print $1}')
+}
+
+function milvm2 () {
+	parted -a optimal -s "$dispositivo" -- mkpart extended 1330 100%
+	parted -a optimal -s "$dispositivo" -- mkpart logic ext2 1331 100%
+	logica=$(parted -s "$dispositivo" -l | grep "1331" | awk '{print $1}')
+	pvcreate -ffy $(echo $dispositivo"$logica")
+	vgcreate -fy xanadu $(echo $dispositivo"$logica")
+	lvcreate -l 100%FREE -n root xanadu
+	partprobe "$dispositivo"
+	mkfs.ext4 -F /dev/mapper/xanadu-root
+	echo "$dispositivo" > /tmp/particionador
+}
+
+function milvm3 () {
+	parted -a optimal -s "$dispositivo" -- mkpart non-fs 1331 100%
+	parted "$dispositivo" set 4 lvm on
+	casilvm=$(fdisk -l "$dispositivo" | grep "LVM" | awk '{print $1}')
+	pvcreate -ffy "$casilvm"
+	vgcreate -fy xanadu "$casilvm"
+	lvcreate -l 100%FREE -n root xanadu
+	partprobe "$dispositivo"
+	mkfs.ext4 -F /dev/mapper/xanadu-root
+	echo "$dispositivo" > /tmp/particionador
+}
+
+function milvm () {
+	advert
+	if yad --skip-taskbar --fixed --center --text-align=fill --borders=6 --title="ADVERTENCIA" --text="Se recomienda utilizar un sistema de energia de respaldo para utilizar LVM"; then	
+	dialogopart
+		if [[ $(parted -s "$dispositivo" -- print | grep "Partition" | awk '{print $3}') = msdos ]]; then
+			milvm2 | yad --fixed --progress --pulsate --auto-close --skip-taskbar --center --progress-text="Creando particiones, por favor espere..." --title="Particionando"
+		else
+			milvm3 | yad --fixed --progress --pulsate --auto-close --skip-taskbar --center --progress-text="Creando particiones, por favor espere..." --title="Particionando"
+		fi
+	else
+		source refractainstaller-yad
+	fi
+}
+
+function miparticion2 () {
+	parted -a optimal -s $dispositivo -- mkpart primary ext4 1331 100%
+	partprobe $dispositivo
+	mkfs.ext4 -L root -F $(fdisk -l $dispositivo | grep "Sistema de ficheros de Linux" | awk '{print $1}')
+	echo $dispositivo > /tmp/particionador
+}
+
+function miparticion () {
+	advert
+	dialogopart
+	miparticion2 | yad --fixed --progress --pulsate --auto-close --skip-taskbar --center --progress-text="Creando particiones, por favor espere..." --title="Particionando"
+}
+
+function finalizando_1 () {
+	rmdir /live-build/
+	rm -f /target/etc/apt/preferences.d/exclude.pref
+	rm -f /target/etc/apt/preferences		
+	rm -f /target/etc/inittab
+	rm -rf /target/tmp/*
+	rm -rf /target/var/tmp/*
+	rm -rf /target/var/cache/polipo/*
+	rm -rf /target/root/.local/share/Trash/*
+	rm -rf /target/home/*/.local/share/Trash/*
+	rm -rf /target/home/*/.mozilla/firefox/*/*Cache*
+	find /target/var/log/ -type f -exec rm -f {} \;
+	if ! [[ -z "$miswap1" ]]; then
+		rm -f /target/swapfile
+		sed -i 's_/swapfile_#/swapfile_g' /target/etc/fstab
+	fi
+	sed -i 's_autologin-user=user_#autologin-user=user_g' /target/etc/lightdm/lightdm.conf
+	sed -i 's_autologin-user-timeout=0_#autologin-user-timeout=0_g' /target/etc/lightdm/lightdm.conf
+	sed -i 's_#greeter-hide-users=false_greeter-hide-users=false_g' /target/etc/lightdm/lightdm.conf
+	sed -i 's_#session-cleanup-script=_session-cleanup-script=/usr/bin/fin_g' /target/etc/lightdm/lightdm.conf
+	sed -i 's_show-indicators=~language;~session;~power_show-indicators=~session;~power_g' /target/etc/lightdm/lightdm-gtk-greeter.conf
+	sed -i 's_#show-clock=_show-clock=true_g' /target/etc/lightdm/lightdm-gtk-greeter.conf
+	sed -i 's_#clock-format=_clock-format=%a, %d %b %I:%M_g' /target/etc/lightdm/lightdm-gtk-greeter.conf
+	sed -i 's_umask 022_umask 027_g' /target/etc/init.d/rc
+	sed -i 's_UMASK		022_UMASK	027_g' /target/etc/login.defs
+	sed -i 's/GRUB_CMDLINE_LINUX_DEFAULT="quiet"/GRUB_CMDLINE_LINUX_DEFAULT="acpi_osi=Linux swapaccount=1 cgroup_enable=memory security=apparmor apparmor=1 panic=10 quiet"/g' /target/etc/default/grub
+	sed -i 's_/bin/bash_/usr/bin/fish_g' /target/etc/passwd
+	echo "default-user-image=/usr/share/images/desktop-base/logo1.png" >> /target/etc/lightdm/lightdm-gtk-greeter.conf
+	echo "user ALL=(ALL) ALL" > /target/etc/sudoers.d/live
+	echo "umask 027" >> /target/etc/profile
+	echo "auth required pam_succeed_if.so user != root quiet" >> /target/etc/pam.d/lightdm
+	echo "proc /proc proc defaults,hidepid=2 0 0" >> /target/etc/fstab
+	echo "tmpfs /run tmpfs rw,nosuid,async,noexec,nodev,noatime,mode=755 0 0" >> /target/etc/fstab
+	echo "tmpfs /tmp tmpfs noatime,async,nosuid,noexec,nodev,rw 0 0" >> /target/etc/fstab
+	echo 'DPkg::Post-Invoke {"echo Ejecutando prelink, espere...;/etc/cron.daily/prelink";}' > /target/etc/apt/apt.conf
+	if [[ $(cat /target/etc/hostname) = xanadu ]]; then
+		echo xanadu-$(date | md5sum | cut -c 1-10) > /target/etc/hostname
+		sed -i 's_xanadu_'$(cat /target/etc/hostname)'_g' /target/etc/hosts
+	fi
+	if [[ -n "$(lspci | grep -E 'VGA|Display' | head -n1 | cut -d ':' -f3 | grep -F 'Intel')" ]]; then
+		echo 'Section "Device"' > /target/etc/X11/xorg.conf
+		echo ' Identifier "intel"' >> /target/etc/X11/xorg.conf
+		echo ' Driver "intel"' >> /target/etc/X11/xorg.conf
+		echo ' BusID  "PCI:0:2:0"' >> /target/etc/X11/xorg.conf
+		echo ' Option "AccelMethod" "SNA"' >> /target/etc/X11/xorg.conf
+		echo ' Option "SwapbuffersWait" "false"' >> /target/etc/X11/xorg.conf
+		echo ' Option "Tiling" "true"' >> /target/etc/X11/xorg.conf
+		echo ' Option "BackingStore" "True"' >> /target/etc/X11/xorg.conf
+		echo ' Option "XvMC" "on"' >> /target/etc/X11/xorg.conf
+		echo ' Option "TripleBuffer" "true"' >> /target/etc/X11/xorg.conf
+		echo ' Option "DRI" "true"' >> /target/etc/X11/xorg.conf
+		echo 'EndSection' >> /target/etc/X11/xorg.conf
+	fi
+	if (( $memoria > 4096000 )); then
+		echo "tmpfs /var/cache/apt/archives tmpfs noatime,async,nodev 0 0" >> /etc/fstab
+	fi
+	chmod 600 /target/etc/sudoers
+	chmod 644 /target/usr/bin/lxpolkit
+	chmod -R g=-r-x,o=-r-x /home/user/
+	chroot /target groupadd -r fuse
+	chroot /target update-grub2
+	chroot /target systemctl enable systemd-readahead-collect 
+	chroot /target systemctl enable systemd-readahead-replay
+	chroot /target systemctl enable swapspace
+	chroot /target systemctl disable clamav-freshclam
+	chroot /target systemctl disable fail2ban
+	chroot /target systemctl disable i2p
+	chroot /target systemctl disable memlockd
+	chroot /target systemctl disable ntp
+	chroot /target systemctl disable polipo
+	chroot /target systemctl disable privoxy
+	chroot /target systemctl disable psad
+	chroot /target systemctl disable ssh
+	chroot /target systemctl disable tor
+	chroot /target iucode_tool --scan-system
+	chroot /target update-initramfs -u
+	chroot /target chage -M 365 root
+	chroot /target yes "" | sensors-detect
+	chroot /target apt -y remove xanadu-installer sysvinit xanadu-grubdoctor
+	if (( $memoria > 4096000 )); then
+		if yad --skip-taskbar --fixed --center --text-align=fill --borders=6 --title="Finalizando" --text="¿Desea activar fail2ban y psad?"; then
+			chroot /target systemctl enable ntp
+			chroot /target systemctl enable fail2ban
+			chroot /target systemctl enable psad
+		else
+			echo 1 > /dev/null
+		fi
+	fi
+}
+
+function loctimezone () {
+	echo -e "\n\tConfigure la zona horaria.\n"
+	sleep 2
+	dpkg-reconfigure tzdata
+	#dpkg-reconfigure locales
+	#dpkg-reconfigure keyboard-configuration
+}
+
 cat > "$rsync_excludes" <<EOF
 
 - /dev/*
@@ -105,23 +264,136 @@ cat > "$rsync_excludes" <<EOF
 - /run/*
 
 EOF
-
 chmod 666 "$rsync_excludes"
-}
 
-if ! [[ -f  $rsync_excludes ]]; then
-	yad --center --text-align=fill --borders=6 --title=ALERTA --window-icon=error --button=Continuar:0 --button=Salir:1 --text="No esta el archivo de rsync excludes, o el nombre no corresponde con lo esperado.  
-  Usted deberia continuar y permitir que el script cree uno.
-    
-  Si tiene algun otro disco o particion que no quiere que sea copiado, desmontelo o edite el archivo de exclusion para agregarlos."
-	if [[ $? = 0 ]]; then
-		rsync_excludes="$(pwd)/installer_exclude.list"
-		copy_excludes
-		echo "@@@ copiado excludes a $(pwd)" >> "$error_log"
-	else
-		exit 0
+cat > "$home_boot_excludes" <<EOF
+
+- *.gvfs
+- *.Xauthority
+- *.ICEauthority
+- *.xsession-errors*
+
+EOF
+chmod 666 "$home_boot_excludes"
+
+cat > /tmp/inittab.debian <<EOF
+
+# /etc/inittab: init(8) configuration.
+# $Id: inittab,v 1.91 2002/01/25 13:35:21 miquels Exp $
+
+# The default runlevel.
+id:2:initdefault:
+
+# Boot-time system configuration/initialization script.
+# This is run first except when booting in emergency (-b) mode.
+si::sysinit:/etc/init.d/rcS
+
+# What to do in single-user mode.
+~~:S:wait:/sbin/sulogin
+
+# /etc/init.d executes the S and K scripts upon change
+# of runlevel.
+#
+# Runlevel 0 is halt.
+# Runlevel 1 is single-user.
+# Runlevels 2-5 are multi-user.
+# Runlevel 6 is reboot.
+
+l0:0:wait:/etc/init.d/rc 0
+l1:1:wait:/etc/init.d/rc 1
+l2:2:wait:/etc/init.d/rc 2
+l3:3:wait:/etc/init.d/rc 3
+l4:4:wait:/etc/init.d/rc 4
+l5:5:wait:/etc/init.d/rc 5
+l6:6:wait:/etc/init.d/rc 6
+# Normally not reached, but fallthrough in case of emergency.
+z6:6:respawn:/sbin/sulogin
+
+# What to do when CTRL-ALT-DEL is pressed.
+ca:12345:ctrlaltdel:/sbin/shutdown -t1 -a -r now
+
+# Action on special keypress (ALT-UpArrow).
+#kb::kbrequest:/bin/echo "Keyboard Request--edit /etc/inittab to let this work."
+
+# What to do when the power fails/returns.
+pf::powerwait:/etc/init.d/powerfail start
+pn::powerfailnow:/etc/init.d/powerfail now
+po::powerokwait:/etc/init.d/powerfail stop
+
+# /sbin/getty invocations for the runlevels.
+#
+# The "id" field MUST be the same as the last
+# characters of the device (after "tty").
+#
+# Format:
+#  <id>:<runlevels>:<action>:<process>
+#
+# Note that on most Debian systems tty7 is used by the X Window System,
+# so if you want to add more getty's go ahead but skip tty7 if you run X.
+#
+1:2345:respawn:/sbin/getty 38400 tty1
+#2:23:respawn:/sbin/getty 38400 tty2
+#3:23:respawn:/sbin/getty 38400 tty3
+#4:23:respawn:/sbin/getty 38400 tty4
+#5:23:respawn:/sbin/getty 38400 tty5
+#6:23:respawn:/sbin/getty 38400 tty6
+
+# Example how to put a getty on a serial line (for a terminal)
+#
+#T0:23:respawn:/sbin/getty -L ttyS0 9600 vt100
+#T1:23:respawn:/sbin/getty -L ttyS1 9600 vt100
+
+# Example how to put a getty on a modem line.
+#
+#T3:23:respawn:/sbin/mgetty -x0 -s 57600 ttyS3
+
+EOF
+chmod 666 /tmp/inittab.debian
+
+===================================================
+
+[[ $DISPLAY ]] || { echo "No hay un servidor X corriendo. Saliendo..." ; exit 1 ; }
+
+if [[ $USER != root ]]; then
+	yad --title=Error --window-icon=error --text="DEBES SER ROOT"
+	exit 1
+fi
+
+if ! [[ -d /lib/live/mount/rootfs ]]; then
+	live_session_warning="ALERTA: No se esta ejecutando desde un Live-CD/USB o esta usando una configuracion no soportada"
+fi
+
+yad "$miicono" --center --text-align=fill --borders=6 --title="Instalar Xanadu GNU/Linux" --button="Instalacion simple":0 --button="Instalacion experta":1 --button="Salir":2 --text="$live_session_warning
+
+ Esta aplicacion instalara Xanadu GNU/Linux en su disco duro.
+
+ Cantidad de RAM minima:	512000 kB.
+ Cantidad de RAM recomendada:	1073740 kB.
+ Cantidad de RAM detectada:	$memoria kB.
+
+ Velocidad del CPU minima:	1000.000 MHz.
+ Velocidad del CPU recomendada:	1500.000 MHz.
+ Velocidad del CPU detectada:	$cpu MHz.
+"
+mode="$?"
+	case $mode in
+		0) install="simple" ;;
+		1) install="expert" ;;
+		2) exit 0 ;;
+	esac
+
+grubversion=$(dpkg -l | grep -v bin | grep -v doc | awk '$2 ~ "grub-[pc]" {print $2}' | grep -v amd64 | grep -v i386 | grep -v common)
+
+check_exit () {
+if [[ $? -ne 0 ]]; then
+	yad --center --question --title="Error" --window-icon=error --button="Continuar":0 --button="Salir ahora":1 --text="Error detectado: $?  $error_message
+\Vea $error_log para detalles. \n\nEsto puede no ser fatal.. Presione \"Continuar\" para proceder"
+	if [[ $? -ne 0 ]]; then
+		cleanup
+		exit 1
 	fi
 fi
+}
 
 if [[ $run_preinstall = "yes" ]]; then
 	var16="TRUE"
@@ -270,9 +542,7 @@ if [[ $encrypt_os = "yes" ]] || [[ $encrypt_home = "yes" ]]; then
 	fi
 fi    
 
-function preinstall ()
-{
-source particionador
+function preinstall () {
 yad "$miicono" --image=gtk-dialog-info --center --title=Particionamiento --text-align=fill --borders=6 --button="Particiones Convencionales":0 --button="Utilizar LVM":1 --button="Regresar":2 --button="Salir":3 --text="Seleccione el tipo de particiones que desea utilizar."
 ans="$?"
 case $ans in
@@ -919,8 +1189,8 @@ fi
 
 if [[ $disable_auto_console = "yes" ]]; then
 	if grep -q "respawn:/bin/login -f" /target/etc/inittab ; then
-		mv /target/etc/inittab /target/etc/inittab.$(date +%Y%m%d_%H%M)
-		cp /usr/lib/refractainstaller/inittab.debian /target/etc/inittab
+		mv -f /target/etc/inittab /target/etc/inittab.$(date +%Y%m%d_%H%M)
+		cp -f /tmp/inittab.debian /target/etc/inittab
 	fi
 fi
 
@@ -1179,7 +1449,7 @@ fi
 #	done
 #fi
 
-source /usr/lib/refractainstaller/post-install/cleanup-install.sh
+finalizando | "$progreso" --progress-text="Optimizando el sistema, por favor espere..." --title="Finalizando"
 
 cp "$error_log" /target/var/log/
 cleanup
