@@ -1,4 +1,16 @@
-commit 9b4af2f071852b2d06c745a51872fb73da392c11 (HEAD, origin/master, origin/HEAD, master)
+commit e8107b41f455e24a8460fa3314e15a17951d2905 (HEAD, origin/master, origin/HEAD, master)
+Author: jose perez <sinfallas@gmail.com>
+Date:   Tue Dec 1 19:39:07 2015 -0430
+
+    * se fucionan todos los archivos
+
+commit 18bf55930a5c69c74689fde3a942e2b2484ca6be
+Author: jose perez <sinfallas@gmail.com>
+Date:   Sun Nov 29 12:50:07 2015 -0430
+
+    * changelog
+
+commit 9b4af2f071852b2d06c745a51872fb73da392c11
 Author: jose perez <sinfallas@gmail.com>
 Date:   Sun Nov 29 12:49:51 2015 -0430
 
