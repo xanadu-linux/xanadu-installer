@@ -7,8 +7,6 @@ rsync_excludes="/tmp/installer_exclude.list"
 home_boot_excludes="/tmp/home_boot_exclude.list"
 initt="/tmp/inittab.debian"
 parti="/tmp/particionador"
-run_preinstall="yes"
-run_postinstall="yes"
 swapfile_blocksize="1024"
 swapfile_count="262144"
 pmount_fixed="no"
@@ -375,39 +373,24 @@ yad "$miicono" --center --text-align=fill --borders=6 --title="Instalar Xanadu G
  Velocidad del CPU detectada:	$cpu MHz.
 "
 mode="$?"
-	case $mode in
-		0) install="simple" ;;
-		1) install="expert" ;;
-		2) exit 0 ;;
-	esac
+case $mode in
+	0) install="simple" ;;
+	1) install="expert" ;;
+	2) exit 0 ;;
+esac
 
 grubversion=$(dpkg -l | grep -v bin | grep -v doc | awk '$2 ~ "grub-[pc]" {print $2}' | grep -v amd64 | grep -v i386 | grep -v common)
 
 check_exit () {
-if [[ $? -ne 0 ]]; then
+if [[ $? != 0 ]]; then
 	yad --center --question --title="Error" --window-icon=error --button="Continuar":0 --button="Salir ahora":1 --text="Error detectado: $?  $error_message
 \Vea $error_log para detalles. \n\nEsto puede no ser fatal.. Presione \"Continuar\" para proceder"
-	if [[ $? -ne 0 ]]; then
+	if [[ $? != 0 ]]; then
 		cleanup
 		exit 1
 	fi
 fi
 }
-
-if [[ $run_preinstall = "yes" ]]; then
-	var16="TRUE"
-else
-	var16="FALSE"
-fi
-
-if [[ $run_postinstall = "yes" ]]; then
-	var17="TRUE"
-else
-	var17="FALSE"
-fi
-
-pre_install_list=$(ls -m /usr/lib/refractainstaller/pre-install)
-post_install_list=$(ls -m /usr/lib/refractainstaller/post-install)
 
 if [[ $install = "expert" ]]; then
 	opts=$(yad "$miicono" --center --list --title="Opciones de instalacion" --text="Marque las opciones que usted quiere para la instalacion.
@@ -426,12 +409,7 @@ Si usted no entiende una opcion, probablemente no la necesite." --checklist --co
   FALSE 12 "Usar etiquetas del sistema de archivos en /etc/fstab" \
   FALSE 13 "Cambiar hostname" \
   FALSE 14 "Desactivar acceso automatico al escritorio" \
-  FALSE 15 "Desactivar acceso automatico a la consola" \
-  $var16 16 "Ejecuta scripts pre-instalacion
-$pre_install_list" \
-  $var17 17 "Ejecuta scripts post-instalacion
-$post_install_list")
-
+  FALSE 15 "Desactivar acceso automatico a la consola")
 fi
 
 if [[ $? = 1 ]]; then
@@ -516,18 +494,6 @@ fi
 if $(echo $opts | grep -q 15); then
 	disable_auto_console="yes"
 fi
-
-if $(echo $opts | grep -q 16); then
-	run_preinstall="yes"
-else
-	run_preinstall="no"
-fi
-
-#if $(echo $opts | grep -q 17); then
-	run_postinstall="yes"
-#else
-#	run_postinstall="no"
-#fi
 
 if [[ $encrypt_os = "yes" ]] || [[ $encrypt_home = "yes" ]]; then
 	if ! [[ -f /sbin/cryptsetup ]]; then
@@ -900,16 +866,7 @@ else
 	install_dev_message="--> El sistema operativo se instalara en $install_dev y formateado como $fs_type_os$os_enc_message"
 fi
 
-if [[ $run_preinstall = "yes" ]]; then
-	preinstall_message="los scripts pre-instalador estan activados."
-else
-	preinstall_message="los scripts pre-instalador estan desactivados."	
-fi
-if [[ $run_postinstall = "yes" ]]; then
-	postinstall_message="los scripts post-instalador estan activados."
-else
-	postinstall_message="los scripts post-instalador estan desactivados."	
-fi
+
 
 yad "$miicono" --center --text-align=fill --borders=6 --info --title=Summary --button="Proceder con la instalacion.":0 --button="Salir":1 --text="Por favor CIERRE cualquier otra aplicacion en ejecucion.
 
@@ -926,20 +883,10 @@ $uuid_message
 $disklabel_message
 $uuid_message
 Hostname: $new_hostname
-$preinstall_message
-$postinstall_message
 
 $proceed_message"
-    if [[ $? != 0 ]]; then
-        exit 0
-    fi
-
-if [[ $run_preinstall = "yes" ]]; then
-	for file in /usr/lib/refractainstaller/pre-install/* ; do
-		if [[ -x $file ]]; then
-			bash $file
-		fi
-	done
+if [[ $? != 0 ]]; then
+	exit 0
 fi
 
 cleanup () {
@@ -1439,14 +1386,6 @@ if [[ $change_user = "yes" ]]; then
         exec 2>>"$error_log"
         fi
 fi
-
-#if [[ $run_postinstall = "yes" ]]; then
-#	for file in /usr/lib/refractainstaller/post-install/* ; do
-#		if [[ -x "$file" ]]; then
-#			bash "$file"
-#		fi
-#	done
-#fi
 
 finalizando_1 | "$progreso" --progress-text="Optimizando el sistema, por favor espere..." --title="Finalizando"
 
