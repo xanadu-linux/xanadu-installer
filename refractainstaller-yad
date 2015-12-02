@@ -2,20 +2,21 @@
 # Based on refractainstaller-8.0.3 by Dean Linkous
 LC_ALL=C
 error_log="/var/log/installer_error.log"
-run_preinstall="yes"
-run_postinstall="yes"
+miicono="--window-icon=/usr/share/icons/install-icon.png"
 rsync_excludes="/tmp/installer_exclude.list"
 home_boot_excludes="/tmp/home_boot_exclude.list"
+initt="/tmp/inittab.debian"
+parti="/tmp/particionador"
+run_preinstall="yes"
+run_postinstall="yes"
 swapfile_blocksize="1024"
 swapfile_count="262144"
 pmount_fixed="no"
 enable_freshclam="no"
 root_ssh="no"
-miicono="--window-icon=/usr/share/icons/install-icon.png"
 source /usr/bin/variables
-rm -f /tmp/particionador
+rm -f "$parti"
 exec 2>"$error_log"
-============================================
 
 function advert () {
 	yad --skip-taskbar --button=ACEPTAR:0 --button=SALIR:1 --fixed --center --text-align=fill --borders=6 --title="ADVERTENCIA" --text="Esta opción eliminara toda la informacion del disco y no podra revertirse."
@@ -79,7 +80,7 @@ function milvm2 () {
 	lvcreate -l 100%FREE -n root xanadu
 	partprobe "$dispositivo"
 	mkfs.ext4 -F /dev/mapper/xanadu-root
-	echo "$dispositivo" > /tmp/particionador
+	echo "$dispositivo" > "$parti"
 }
 
 function milvm3 () {
@@ -91,7 +92,7 @@ function milvm3 () {
 	lvcreate -l 100%FREE -n root xanadu
 	partprobe "$dispositivo"
 	mkfs.ext4 -F /dev/mapper/xanadu-root
-	echo "$dispositivo" > /tmp/particionador
+	echo "$dispositivo" > "$parti"
 }
 
 function milvm () {
@@ -103,7 +104,7 @@ function milvm () {
 		else
 			milvm3 | yad --fixed --progress --pulsate --auto-close --skip-taskbar --center --progress-text="Creando particiones, por favor espere..." --title="Particionando"
 		fi
-	else
+	elsef
 		source refractainstaller-yad
 	fi
 }
@@ -112,7 +113,7 @@ function miparticion2 () {
 	parted -a optimal -s $dispositivo -- mkpart primary ext4 1331 100%
 	partprobe $dispositivo
 	mkfs.ext4 -L root -F $(fdisk -l $dispositivo | grep "Sistema de ficheros de Linux" | awk '{print $1}')
-	echo $dispositivo > /tmp/particionador
+	echo $dispositivo > "$parti"
 }
 
 function miparticion () {
@@ -276,7 +277,7 @@ cat > "$home_boot_excludes" <<EOF
 EOF
 chmod 666 "$home_boot_excludes"
 
-cat > /tmp/inittab.debian <<EOF
+cat > "$initt" <<EOF
 
 # /etc/inittab: init(8) configuration.
 # $Id: inittab,v 1.91 2002/01/25 13:35:21 miquels Exp $
@@ -348,9 +349,7 @@ po::powerokwait:/etc/init.d/powerfail stop
 #T3:23:respawn:/sbin/mgetty -x0 -s 57600 ttyS3
 
 EOF
-chmod 666 /tmp/inittab.debian
-
-===================================================
+chmod 666 "$initt"
 
 [[ $DISPLAY ]] || { echo "No hay un servidor X corriendo. Saliendo..." ; exit 1 ; }
 
@@ -649,7 +648,7 @@ if [[ $install = "expert" ]]; then
 	fi
 fi
 
-if [[ -f /tmp/particionador ]]; then
+if [[ -f "$parti" ]]; then
 	echo 1 > /dev/null
 else
 	blkid -c /dev/null | awk '{print $1 $2}' | yad "$miicono" --timeout 20 --text-info --title="Lista de particiones" --text="Lista de particiones (para referencia) Usted puede necesitar esto mas adelante." --width 820 --height 400 --button="Cerrar":0 & sleep 2
@@ -661,7 +660,7 @@ boot_dev=$(find /dev -mindepth 1 -maxdepth 1  -name "*[sh]d[a-z][1-9]*" \
   | yad "$miicono" --center --list --title="particion /boot" --text="Seleccione una particion para /boot." --separator="" --column ' ' --column 'Particiones' --height=400 --width=150 --button="ACEPTAR":0)
 }
 
-if [[ -f /tmp/particionador ]]; then
+if [[ -f "$parti" ]]; then
 	boot_dev=$(blkid -c /dev/null | grep "boot" | awk '{print $1}' | sed 's/.$//g')
 else
 	choose_boot
@@ -696,7 +695,7 @@ elif [[ $install_dev = $boot_dev ]]; then
 fi
 }
 
-if [[ -f /tmp/particionador ]]; then
+if [[ -f "$parti" ]]; then
 	install_dev=$(blkid -c /dev/null | grep "root" | awk '{print $1}' | sed 's/.$//g')
 else
 	choose_root
@@ -1052,7 +1051,7 @@ else
     install_part="$install_dev"
 fi 
 if [[ $no_format != "yes" ]]; then
-	if [[ -f /tmp/particionador ]]; then
+	if [[ -f "$parti" ]]; then
 		echo 1 > /dev/null
 	else
 		if [[ $fs_type_os = ext4 ]]; then
@@ -1449,7 +1448,7 @@ fi
 #	done
 #fi
 
-finalizando | "$progreso" --progress-text="Optimizando el sistema, por favor espere..." --title="Finalizando"
+finalizando_1 | "$progreso" --progress-text="Optimizando el sistema, por favor espere..." --title="Finalizando"
 
 cp "$error_log" /target/var/log/
 cleanup
