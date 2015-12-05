@@ -14,7 +14,7 @@ fi
 if (( $cpu < 1000.000 )); then
 	$advertencia --timeout=10 --text="Su CPU no es capaz de brindar una experiencia optima para ejecutar Xanadu GNU/Linux."
 fi
-gksu 'x-terminal-emulator -e wget -q -T 2 -O - https://raw.githubusercontent.com/sinfallas/xanadu-installer/master/refractainstaller-yad | bash /dev/stdin' &
+gksu 'x-terminal-emulator -e wget -q -T 2 -O - https://raw.githubusercontent.com/sinfallas/xanadu-installer/master/xanaduinstaller-yad | bash /dev/stdin' &
 if [[ $? != 0 ]]; then
 	gksu 'x-terminal-emulator -e /usr/bin/xanaduinstaller-yad' &
 fi

@@ -26,7 +26,7 @@ exec 2>"$error_log"
 function advert () {
 	yad --skip-taskbar --button="Aceptar":0 --button="Salir":1 --fixed --center --text-align=fill --borders=6 --title="ADVERTENCIA" --text="Esta opción eliminara toda la informacion del disco y no podra revertirse."
 	if [[ $? != 0 ]]; then
-		source refractainstaller-yad
+		source xanaduinstaller-yad
 	fi
 }
 
@@ -35,7 +35,7 @@ function dialogopart () {
 	if [[ -z "$dispositivo" ]]; then
 		$errores --button="Ir atras":0 --button="Salir":1 --text="No selecciono nada. Debe escoger un disco."
 		if [[ $? = 0 ]]; then
-			source refractainstaller-yad
+			source xanaduinstaller-yad
 		else
 			exit 1
 		fi
@@ -108,7 +108,7 @@ function milvm () {
 			milvm3 | $progreso --progress-text="Creando particiones, por favor espere..." --title="Particionando"
 		fi
 	else
-		source refractainstaller-yad
+		source xanaduinstaller-yad
 	fi
 }
 
@@ -304,7 +304,7 @@ function preinstall () {
 	case $ans in
 		0) miparticion ; check_exit ;;
 		1) milvm ; check_exit ;;
-		2) source refractainstaller-yad ;;
+		2) source xanaduinstaller-yad ;;
 		3) exit 0 ;;
 	esac
 }
