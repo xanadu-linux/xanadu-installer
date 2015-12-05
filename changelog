@@ -1,4 +1,16 @@
-commit 41225a08428899b9367cb0a94d5e9a23feb350a5 (HEAD, origin/master, origin/HEAD, master)
+commit 649f65dea0c0303585eff1b47533cecb26f5bf06 (HEAD, origin/master, origin/HEAD, master)
+Author: jose perez <sinfallas@gmail.com>
+Date:   Fri Dec 4 23:37:10 2015 -0430
+
+    * se elimina el archivo variables
+
+commit 59dafaa1a30cfc105cdb3a2473fdd25f68adddac
+Author: jose perez <sinfallas@gmail.com>
+Date:   Fri Dec 4 23:34:50 2015 -0430
+
+    * changelog
+
+commit 41225a08428899b9367cb0a94d5e9a23feb350a5
 Author: jose perez <sinfallas@gmail.com>
 Date:   Fri Dec 4 23:29:22 2015 -0430
 
