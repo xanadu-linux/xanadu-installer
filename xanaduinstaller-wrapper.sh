@@ -16,6 +16,6 @@ if (( $cpu < 1000.000 )); then
 fi
 gksu 'x-terminal-emulator -e wget -q -T 2 -O - https://raw.githubusercontent.com/sinfallas/xanadu-installer/master/refractainstaller-yad | bash /dev/stdin' &
 if [[ $? != 0 ]]; then
-	gksu 'x-terminal-emulator -e /usr/bin/refractainstaller-yad' &
+	gksu 'x-terminal-emulator -e /usr/bin/xanaduinstaller-yad' &
 fi
 exit 0
