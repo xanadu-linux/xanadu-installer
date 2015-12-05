@@ -11,6 +11,8 @@ swapfile_blocksize="1024"
 swapfile_count="262144"
 pmount_fixed="no"
 fs_type_boot="ext4"
+grubversion=$(dpkg -l | grep -v bin | grep -v doc | awk '$2 ~ "grub-[pc]" {print $2}' | grep -v amd64 | grep -v i386 | grep -v common)
+dispositivo=$(fdisk -l | grep "Disco" | awk '{print $2}' | sed 's/.$//g' | yad --center --no-click --list --title="Disco a particionar" --text="Seleccione el disco que desea particionar." --separator="" --column 'Dispositivo' --height 380 --width 150 --button="ACEPTAR":0)
 source /usr/bin/variables
 rm -f "$parti"
 exec 2>"$error_log"
@@ -25,7 +27,6 @@ function advert () {
 }
 
 function dialogopart () {
-	dispositivo=$(fdisk -l | grep "Disco" | awk '{print $2}' | sed 's/.$//g' | yad --center --no-click --list --title="Disco a particionar" --text="Seleccione el disco que desea particionar." --separator="" --column 'Dispositivo' --height 380 --width 150 --button="ACEPTAR":0)
 	if [[ -z "$dispositivo" ]] ; then
 		yad --center --window-icon=error --title="Error" --button="Ir atras":0 --button="Salir":1 --text="No selecciono nada. Debe escoger un disco."
 		if [[ $? = 0 ]] ; then
@@ -77,7 +78,7 @@ function milvm2 () {
 	lvcreate -l 100%FREE -n root xanadu
 	partprobe "$dispositivo"
 	mkfs.ext4 -F /dev/mapper/xanadu-root
-	echo "$dispositivo" > "$parti"
+	touch "$parti"
 }
 
 function milvm3 () {
@@ -89,7 +90,7 @@ function milvm3 () {
 	lvcreate -l 100%FREE -n root xanadu
 	partprobe "$dispositivo"
 	mkfs.ext4 -F /dev/mapper/xanadu-root
-	echo "$dispositivo" > "$parti"
+	touch "$parti"
 }
 
 function milvm () {
@@ -110,7 +111,7 @@ function miparticion2 () {
 	parted -a optimal -s "$dispositivo" -- mkpart primary ext4 1331 100%
 	partprobe "$dispositivo"
 	mkfs.ext4 -L root -F $(fdisk -l "$dispositivo" | grep "Sistema de ficheros de Linux" | awk '{print $1}')
-	echo "$dispositivo" > "$parti"
+	touch "$parti"
 }
 
 function miparticion () {
@@ -212,6 +213,119 @@ function loctimezone () {
 	dpkg-reconfigure tzdata
 	#dpkg-reconfigure locales
 	#dpkg-reconfigure keyboard-configuration
+}
+
+function cleanup () {
+echo -e "\n @@@ Limpiando...\n" >> "$error_log"
+if $(df | grep -q /target/proc/); then
+	umount /target/proc/
+fi
+
+if $(df | grep -q /target/dev/); then
+	umount /target/dev/
+fi
+
+if $(df | grep -q /target/sys/); then
+	umount /target/sys/
+fi
+
+if $(df | grep -q $boot_dev); then
+	umount -l $boot_dev
+fi
+
+if $(df | grep -q /target_boot); then
+	umount -l /target_boot/
+fi
+
+if $(df | grep -q /target_home); then
+	umount -l /target_home/
+fi
+
+if $(df | grep -q $home_dev); then
+	umount $home_dev
+fi
+
+if $(df | grep -q "\/dev\/mapper\/home_fs"); then
+	umount /dev/mapper/home_fs
+fi
+
+if [[ -h /dev/mapper/home_fs ]]; then
+	cryptsetup luksClose home_fs
+fi
+
+if $(df | grep -q /target); then
+	umount -l /target/
+fi
+
+if $(df | grep -q $install_dev); then
+	umount $install_dev
+fi    
+
+if $(df | grep "\/dev\/mapper\/root_fs"); then
+	umount /dev/mapper/root_fs
+fi
+
+if [[ -h /dev/mapper/root_fs ]]; then
+	cryptsetup luksClose /dev/mapper/root_fs
+fi
+
+if [[ -d /target ]]; then
+	rm -rf /target
+fi
+
+if [[ -d /target_home ]]; then
+	rm -rf /target_home
+fi
+
+if [[ -d /target_boot ]]; then
+	rm -rf /target_boot
+fi
+}
+
+function check_exit () {
+	if [[ $? != 0 ]]; then
+		yad --center --question --title="Error" --window-icon=error --button="Continuar":0 --button="Salir ahora":1 --text="Error detectado: $?  $error_message
+\Vea $error_log para detalles. \n\nEsto puede no ser fatal.. Presione \"Continuar\" para proceder"
+		if [[ $? != 0 ]]; then
+			cleanup
+			exit 1
+		fi
+	fi
+}
+
+function preinstall () {
+	yad "$miicono" --image=gtk-dialog-info --center --title=Particionamiento --text-align=fill --borders=6 --button="Particiones Convencionales":0 --button="Utilizar LVM":1 --button="Regresar":2 --button="Salir":3 --text="Seleccione el tipo de particiones que desea utilizar."
+	ans="$?"
+	case $ans in
+		0) miparticion ; check_exit ;;
+		1) milvm ; check_exit ;;
+		2) source refractainstaller-yad ;;
+		3) exit 0 ;;
+	esac
+}
+
+function choose_boot () {
+	boot_dev=$(find /dev -mindepth 1 -maxdepth 1  -name "*[sh]d[a-z][1-9]*" | sort | awk '{print "\n" $0 }' | yad "$miicono" --center --list --title="particion /boot" --text="Seleccione una particion para /boot." --separator="" --column ' ' --column 'Particiones' --height=400 --width=150 --button="ACEPTAR":0)
+}
+
+function fix_hostname () {
+	new_hostname=$(yad "$miicono" --center --text-align=fill --borders=6 --entry --title="Cambio de hostname" --text="Hostname erroneo. Intente de nuevo." --entry-text="$HOSTNAME" --width=500 --button="ACEPTAR":0)
+	test_hostname	
+}
+
+function test_hostname () {
+	if [[ $new_hostname =~ [_]|[@]|[~]|[\!]|[\#]|[=]|[+]|[\&]|[\^]|[\$]|[%]|[\(]|[\)]|[\*]|[\:]|[\;]|[\"]|[\']|[\`]|[,]|[.]|[\<]|[\>]|[\?]|[\{]|[\}]|[\[]|[\]]|[/]|[\|]|[\ ] ]]; then
+ 		fix_hostname
+	elif [[ $new_hostname = -* ]] || [[ $new_hostname = *- ]]; then
+		fix_hostname
+	elif [[ -z $new_hostname ]]; then
+		new_hostname="$HOSTNAME"
+	fi
+}
+
+function select_hostname () {
+	new_hostname=$(yad "$miicono" --center --entry --title="Cambio de hostname" --text="Ingrese el nuevo hostname para el sistema." --entry-text="$HOSTNAME" --width=500 --button="ACEPTAR":0)
+	#test_hostname
 }
 
 cat > "$rsync_excludes" <<EOF
@@ -345,12 +459,9 @@ po::powerokwait:/etc/init.d/powerfail stop
 EOF
 chmod 666 "$initt"
 
-[[ $DISPLAY ]] || { echo "No hay un servidor X corriendo. Saliendo..." ; exit 1 ; }
+#====
 
-if [[ $USER != root ]]; then
-	yad --title=Error --window-icon=error --text="DEBES SER ROOT"
-	exit 1
-fi
+[[ $DISPLAY ]] || { echo "No hay un servidor X corriendo. Saliendo..." ; exit 1 ; }
 
 if ! [[ -d /lib/live/mount/rootfs ]]; then
 	live_session_warning="ALERTA: No se esta ejecutando desde un Live-CD/USB o esta usando una configuracion no soportada"
@@ -374,19 +485,6 @@ case $mode in
 	1) install="expert" ;;
 	2) exit 0 ;;
 esac
-
-grubversion=$(dpkg -l | grep -v bin | grep -v doc | awk '$2 ~ "grub-[pc]" {print $2}' | grep -v amd64 | grep -v i386 | grep -v common)
-
-check_exit () {
-	if [[ $? != 0 ]]; then
-		yad --center --question --title="Error" --window-icon=error --button="Continuar":0 --button="Salir ahora":1 --text="Error detectado: $?  $error_message
-\Vea $error_log para detalles. \n\nEsto puede no ser fatal.. Presione \"Continuar\" para proceder"
-		if [[ $? != 0 ]]; then
-			cleanup
-			exit 1
-		fi
-	fi
-}
 
 if [[ $install = "expert" ]]; then
 	opts=$(yad "$miicono" --center --list --title="Opciones de instalacion" --text="Marque las opciones que usted quiere para la instalacion.
@@ -503,23 +601,9 @@ if [[ $encrypt_os = "yes" ]] || [[ $encrypt_home = "yes" ]]; then
 	fi
 fi    
 
-function preinstall () {
-	yad "$miicono" --image=gtk-dialog-info --center --title=Particionamiento --text-align=fill --borders=6 --button="Particiones Convencionales":0 --button="Utilizar LVM":1 --button="Regresar":2 --button="Salir":3 --text="Seleccione el tipo de particiones que desea utilizar."
-	ans="$?"
-	case $ans in
-		0) miparticion ; check_exit ;;
-		1) milvm ; check_exit ;;
-		2) source refractainstaller-yad ;;
-		3) exit 0 ;;
-	esac
-}
-
-yad "$miicono" --center --title=Particionamiento --text-align=fill --borders=6 --button="Ejecutar GParted":0 --button="Automatico":1 \
-    --button="Saltar este paso":2 --button="Salir":3 \
-    --text="Necesita tener una particion dedicada a /BOOT y otra particion dedicada a la RAIZ ademas de una particion SWAP. Si usted ya tiene las particiones, puede saltar este paso.
+yad "$miicono" --center --title=Particionamiento --text-align=fill --borders=6 --button="Ejecutar GParted":0 --button="Automatico":1 --button="Saltar este paso":2 --button="Salir":3 --text="Necesita tener una particion dedicada a /BOOT y otra particion dedicada a la RAIZ ademas de una particion SWAP. Si usted ya tiene las particiones, puede saltar este paso.
 
   Ejecutar particionador ahora?"
-	
 	ans="$?"
 	case $ans in
 		0) 	gparted ; check_exit ;;
@@ -603,10 +687,6 @@ if [[ -f "$parti" ]]; then
 else
 	blkid -c /dev/null | awk '{print $1 $2}' | yad "$miicono" --timeout 20 --text-info --title="Lista de particiones" --text="Lista de particiones (para referencia) Usted puede necesitar esto mas adelante." --width 820 --height 400 --button="Cerrar":0 & sleep 2
 fi
-
-choose_boot () {
-	boot_dev=$(find /dev -mindepth 1 -maxdepth 1  -name "*[sh]d[a-z][1-9]*" | sort | awk '{print "\n" $0 }' | yad "$miicono" --center --list --title="particion /boot" --text="Seleccione una particion para /boot." --separator="" --column ' ' --column 'Particiones' --height=400 --width=150 --button="ACEPTAR":0)
-}
 
 if [[ -f "$parti" ]]; then
 	boot_dev=$(blkid -c /dev/null | grep "boot" | awk '{print $1}' | sed 's/.$//g')
@@ -759,26 +839,6 @@ if [[ $use_existing_swap = "yes" ]]; then
 	choose_swap
 fi
 
-fix_hostname () {
-	new_hostname=$(yad "$miicono" --center --text-align=fill --borders=6 --entry --title="Cambio de hostname" --text="Hostname erroneo. Intente de nuevo." --entry-text="$HOSTNAME" --width=500 --button="ACEPTAR":0)
-	test_hostname	
-}
-
-test_hostname () {
-	if [[ $new_hostname =~ [_]|[@]|[~]|[\!]|[\#]|[=]|[+]|[\&]|[\^]|[\$]|[%]|[\(]|[\)]|[\*]|[\:]|[\;]|[\"]|[\']|[\`]|[,]|[.]|[\<]|[\>]|[\?]|[\{]|[\}]|[\[]|[\]]|[/]|[\|]|[\ ] ]]; then
- 		fix_hostname
-	elif [[ $new_hostname = -* ]] || [[ $new_hostname = *- ]]; then
-		fix_hostname
-	elif [[ -z $new_hostname ]]; then
-		new_hostname="$HOSTNAME"
-	fi
-}
-
-select_hostname () {
-	new_hostname=$(yad "$miicono" --center --entry --title="Cambio de hostname" --text="Ingrese el nuevo hostname para el sistema." --entry-text="$HOSTNAME" --width=500 --button="ACEPTAR":0)
-	#test_hostname
-}
-
 if [[ $change_hostname = "yes" ]]; then
 	select_hostname
 else
@@ -861,73 +921,6 @@ $proceed_message"
 if [[ $? != 0 ]]; then
 	exit 0
 fi
-
-cleanup () {
-echo -e "\n @@@ Limpiando...\n" >> "$error_log"
-if $(df | grep -q /target/proc/) ; then
-	umount /target/proc/
-fi
-
-if $(df | grep -q /target/dev/) ; then
-	umount /target/dev/
-fi
-
-if $(df | grep -q /target/sys/) ; then
-	umount /target/sys/
-fi
-
-if $(df | grep -q $boot_dev) ; then
-	umount -l $boot_dev
-fi
-
-if $(df | grep -q /target_boot) ; then
-	umount -l /target_boot/
-fi
-
-if $(df | grep -q /target_home) ; then
-	umount -l /target_home/
-fi
-
-if $(df | grep -q $home_dev) ; then
-	umount $home_dev
-fi
-
-if $(df | grep -q "\/dev\/mapper\/home_fs") ; then
-	umount /dev/mapper/home_fs
-fi
-
-if [[ -h /dev/mapper/home_fs ]]; then
-	cryptsetup luksClose home_fs
-fi
-
-if $(df | grep -q /target) ; then
-	umount -l /target/
-fi
-
-if $(df | grep -q $install_dev) ; then
-	umount $install_dev
-fi    
-
-if $(df | grep "\/dev\/mapper\/root_fs") ; then
-	umount /dev/mapper/root_fs
-fi
-
-if [[ -h /dev/mapper/root_fs ]]; then
-	cryptsetup luksClose /dev/mapper/root_fs
-fi
-
-if [[ -d /target ]]; then
-	rm -rf /target
-fi
-
-if [[ -d /target_home ]]; then
-	rm -rf /target_home
-fi
-
-if [[ -d /target_boot ]]; then
-	rm -rf /target_boot
-fi
-}
 
 cleanup
 
@@ -1063,22 +1056,18 @@ if [[ -e /target/usr/bin/updatedb.mlocate ]]; then
 fi
 
 if [[ $disable_auto_desktop = "yes" ]]; then
-	#gdm
 	if [[ -f /target/etc/gdm/gdm.conf ]]; then
 		sed -i 's/^AutomaticLogin/#AutomaticLogin/' /target/etc/gdm/gdm.conf
 	fi
 
-	#gdm3
 	if [[ -f /target/etc/gdm3/daemon.conf ]]; then
 		sed -i 's/^AutomaticLogin/#AutomaticLogin/' /target/etc/gdm3/daemon.conf
 	fi
 
-	#lightdm
 	if [[ -f /target/etc/lightdm/lightdm.conf ]]; then
 		sed -i 's/^autologin/#autologin/g' /target/etc/lightdm/lightdm.conf
 	fi
 
-	#kdm
 	if [ -f /target/etc/default/kdm.d/live-autologin ]; then
 		rm -f /target/etc/default/kdm.d/live-autologin
 	fi
@@ -1091,7 +1080,6 @@ if [[ $disable_auto_desktop = "yes" ]]; then
 		sed -i -e 's/^AutoReLogin/#AutoReLogin/g' /target/etc/kde4/kdm/kdmrc
 	fi
 
-	#trinity
 	if [[ -f /target/etc/default/kdm-trinity.d/live-autologin ]]; then
 		sed -i 's/^AUTOLOGIN/#AUTOLOGIN/g' /target/etc/default/kdm-trinity.d/live-autologin
 	fi
@@ -1103,8 +1091,8 @@ fi
 
 if [[ $disable_auto_console = "yes" ]]; then
 	if grep -q "respawn:/bin/login -f" /target/etc/inittab ; then
-		mv -f /target/etc/inittab /target/etc/inittab.$(date +%Y%m%d_%H%M)
-		cp -f /tmp/inittab.debian /target/etc/inittab
+		mv -f /target/etc/inittab /target/etc/inittab.old
+		mv -f /tmp/inittab.debian /target/etc/inittab
 	fi
 fi
 
@@ -1189,12 +1177,12 @@ if [[ -n $boot_dev ]]; then
 	else
 		boot_part="$boot_dev"
 	fi
-if [[ $fs_type_boot = ext4 ]]; then
-    echo -e "$boot_part\t/boot\t$fs_type_boot\tdefaults,noatime,errors=remount-ro\t0\t2" >> /target/etc/fstab
-else
-    echo -e "$boot_part\t/boot\t$fs_type_boot\tdefaults\t0\t2" >> /target/etc/fstab
-fi
-    check_exit
+	if [[ $fs_type_boot = ext4 ]]; then
+		echo -e "$boot_part\t/boot\t$fs_type_boot\tdefaults,noatime,errors=remount-ro\t0\t2" >> /target/etc/fstab
+	else
+		echo -e "$boot_part\t/boot\t$fs_type_boot\tdefaults\t0\t2" >> /target/etc/fstab
+	fi
+	check_exit
 fi
 
 if [[ $use_existing_swap = "yes" ]]; then
@@ -1203,18 +1191,18 @@ if [[ $use_existing_swap = "yes" ]]; then
 	else
 		swap_part="$swap_dev"
 	fi
-    echo -e "\n Adding swap entry to fstab...\n"
-    echo -e "$swap_part\tswap\tswap\tdefaults\t0\t0" >> /target/etc/fstab
+	echo -e "\n Adding swap entry to fstab...\n"
+	echo -e "$swap_part\tswap\tswap\tdefaults\t0\t0" >> /target/etc/fstab
 elif ! [[ $use_existing_swap = "yes" ]]; then
 	echo -e "/swapfile\tswap\tswap\tdefaults\t0\t0" >> /target/etc/fstab
 fi
 
 if [[ $encrypt_os = yes ]]; then
-    echo -e "root_fs\t\t$install_dev\t\tnone\t\tluks" >> /target/etc/crypttab
+	echo -e "root_fs\t\t$install_dev\t\tnone\t\tluks" >> /target/etc/crypttab
 fi
 
 if [[ $encrypt_home = yes ]]; then
-    echo -e "home_fs\t\t$home_dev\t\tnone\t\tluks" >> /target/etc/crypttab
+	echo -e "home_fs\t\t$home_dev\t\tnone\t\tluks" >> /target/etc/crypttab
 fi
 
 mount -B /dev/ /target/dev/ ; check_exit 
@@ -1222,25 +1210,15 @@ mount -B /proc/ /target/proc/ ; check_exit
 mount -B /sys/ /target/sys/ ; check_exit 
 
 if [[ -n $boot_dev ]]; then
-    chroot /target mount $boot_dev /boot
+	chroot /target mount $boot_dev /boot
 fi
 
 if [[ -n $grub_partition ]]; then
 	if [[ $grubversion != "grub-pc" ]]; then
-
-		# isolate the device (sdx) letter then use tr like this to translate to the right number for grub
 		GRUBDEVICENUM=$(echo $grub_partition |sed 's:/dev/sd::' |sed 's:[0-9]::'g |tr '[a-j]' '[0-9]')
-
-		# isolate the partition number
 		INSTALLPARTNUM=$(echo $grub_partition |sed 's:/dev/sd::'|sed 's:[a-z]::')
-
-		# and reduce it by 1 for grub
 		GRUBPARTNUM=$(expr $INSTALLPARTNUM - 1)
-
-		# finally get the finished grub root syntax
 		GRUBROOT="(hd$GRUBDEVICENUM,$GRUBPARTNUM)"
-
-
 		chroot /target /bin/bash grub-install $grub_partition
 		grub --batch <<EOF
 		root $GRUBROOT
@@ -1255,29 +1233,28 @@ EOF
 fi
 
 if [[ -n $grub_dev ]]; then
-    echo -e "\n Installing the boot loader...\n" >> "$error_log"
-    error_message="grub-install failed."
-    chroot /target grub-install $grub_dev >> "$error_log" ; check_exit
+	echo -e "\n Installing the boot loader...\n" >> "$error_log"
+	error_message="grub-install failed."
+	chroot /target grub-install $grub_dev >> "$error_log" ; check_exit
 fi
 
 error_message=""
 
 if [[ $encrypt_os = yes ]] || [[ $encrypt_home = yes ]]; then
-    chroot /target /usr/sbin/update-initramfs.orig.initramfs-tools -u >> "$error_log"
+	chroot /target /usr/sbin/update-initramfs.orig.initramfs-tools -u >> "$error_log"
 fi
 
 if [[ -n $grub_dev ]] || [[ -n $grub_partition ]]; then
-    chroot /target update-grub ; check_exit 
+	chroot /target update-grub ; check_exit 
 fi
 
 if [[ $sep_home = "yes" ]]; then
-    mount $home_part /target/home
+	mount $home_part /target/home
 fi
 
 if [[ $change_user = "yes" ]]; then
 	oldname=$(awk -F: '/1000:1000/ { print $1 }' /target/etc/passwd)
 	newname=$(yad "$miicono" --center --entry --entry-text="$oldname" --title="Cambio de username" --text="Ingrese el nombre de usuario que quiera usar." --width=300 --button="ACEPTAR":0)
-
 	chroot /target usermod -l $newname $oldname ; check_exit
 	chroot /target groupmod -n $newname $oldname ; check_exit
 	chroot /target usermod -d /home/$newname -m $newname ; check_exit
@@ -1292,52 +1269,52 @@ if [[ $change_user = "yes" ]]; then
 fi
 
 if [[ $change_user = "yes" ]]; then
-    live_user=$(awk -v pattern="$newname" -F: '$1 ~ pattern { print $5 }' /target/etc/passwd)
-    real_name=$(yad "$miicono" --center --entry --title="Cambio de el nombre real" --text="El nombre actual es $live_user.
+	live_user=$(awk -v pattern="$newname" -F: '$1 ~ pattern { print $5 }' /target/etc/passwd)
+	real_name=$(yad "$miicono" --center --entry --title="Cambio de el nombre real" --text="El nombre actual es $live_user.
 Ingrese el nombre que quiera usar \(sin comas\)." --width=350 --button="ACEPTAR":0)
-    sed -i~ "s/$live_user/$real_name,,,/" /target/etc/passwd
+	sed -i~ "s/$live_user/$real_name,,,/" /target/etc/passwd
 fi
 
 if [[ $install = "expert" ]]; then
-    yad "$miicono" --center --text-align=fill --borders=6 --title="Edicion de /etc/sudoers" --button="Si":0 --button=No:1 --text="Puede que necesite editar /etc/sudoers para comentar la linea que da a $oldname poder absoluto, o reemplace $oldname con $newname.
+	yad "$miicono" --center --text-align=fill --borders=6 --title="Edicion de /etc/sudoers" --button="Si":0 --button=No:1 --text="Puede que necesite editar /etc/sudoers para comentar la linea que da a $oldname poder absoluto, o reemplace $oldname con $newname.
 Editar /etc/sudoers ahora?" 
 	ans="$?"
-    if [[ $ans = "0" ]]; then
-        edit_sudoers="yes"
-        chroot /target visudo
-    fi
+	if [[ $ans = "0" ]]; then
+		edit_sudoers="yes"
+		chroot /target visudo
+	fi
 fi
 
 if [[ $edit_sudoers = "yes" ]]; then
-    yad "$miicono" --center --text-align=fill --borders=6 --title="Desactivar modo sudo para gksu" --button="Si, yo comente la linea.":0 --button="No, Yo reemplace la linea.":1 --text="Si usted comento la linea en /etc/sudoers, uno o mas archivos seran cambiados para que gksu funcione correctamente." 
+	yad "$miicono" --center --text-align=fill --borders=6 --title="Desactivar modo sudo para gksu" --button="Si, yo comente la linea.":0 --button="No, Yo reemplace la linea.":1 --text="Si usted comento la linea en /etc/sudoers, uno o mas archivos seran cambiados para que gksu funcione correctamente." 
 		ans="$?"
-        if [[ $ans = "0" ]]; then
-            if [[ -n $newname ]]; then
-                sed -i~ '/sudo-mode/s/true/false/' /target/home/"$newname"/.gconf/apps/gksu/%gconf.xml
-            else
-                sed -i~ '/sudo-mode/s/true/false/' /target/home/user/.gconf/apps/gksu/%gconf.xml
-            fi
-        fi
+	if [[ $ans = "0" ]]; then
+		if [[ -n $newname ]]; then
+			sed -i~ '/sudo-mode/s/true/false/' /target/home/"$newname"/.gconf/apps/gksu/%gconf.xml
+		else
+			sed -i~ '/sudo-mode/s/true/false/' /target/home/user/.gconf/apps/gksu/%gconf.xml
+		fi
+	fi
 fi
 
 if [[ $install = "expert" ]]; then
-    yad "$miicono" --center --text-align=fill --borders=6 --title="Cambiar clave de root" --button="Si":0 --button=No:1 --text="Le gustaria cambiar la clave de root? (Recomendado)"
+	yad "$miicono" --center --text-align=fill --borders=6 --title="Cambiar clave de root" --button="Si":0 --button=No:1 --text="Le gustaria cambiar la clave de root? (Recomendado)"
 		ans="$?"
-        if [[ $ans = 0 ]]; then
+	if [[ $ans = 0 ]]; then
 		exec 2>&1
-            chroot /target passwd
-        exec 2>>"$error_log"
-        fi 
+		chroot /target passwd
+		exec 2>>"$error_log"
+	fi 
 fi
 
 if [[ $change_user = "yes" ]]; then
-    yad "$miicono" --center --text-align=fill --borders=6 --title="Cambio de clave de usuario" --button="Si":0 --button="No":1 --text="Le gustaria cambiar la clave del usuario?" 
+	yad "$miicono" --center --text-align=fill --borders=6 --title="Cambio de clave de usuario" --button="Si":0 --button="No":1 --text="Le gustaria cambiar la clave del usuario?" 
 		ans="$?"
-        if [[ $ans = 0 ]]; then
+	if [[ $ans = 0 ]]; then
 		exec 2>&1
-            chroot /target passwd "$newname"
-        exec 2>>"$error_log"
-        fi
+		chroot /target passwd "$newname"
+		exec 2>>"$error_log"
+	fi
 fi
 
 finalizando_1 | "$progreso" --progress-text="Optimizando el sistema, por favor espere..." --title="Finalizando"
