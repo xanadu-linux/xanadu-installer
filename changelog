@@ -1,4 +1,16 @@
-commit 2c84a9539b2fab8126588a48519d4cf94e4fb103 (HEAD, origin/master, origin/HEAD, master)
+commit d24b4d1bf24809586f35c9dec429706554486286 (HEAD, origin/master, origin/HEAD, master)
+Author: jose perez <sinfallas@gmail.com>
+Date:   Sat Dec 5 18:38:12 2015 -0430
+
+    * cambio de nombres de archivos
+
+commit 82738a23d477405c62c8b6b813e0e483cc7eea70
+Author: jose perez <sinfallas@gmail.com>
+Date:   Sat Dec 5 18:34:56 2015 -0430
+
+    * changelog
+
+commit 2c84a9539b2fab8126588a48519d4cf94e4fb103
 Author: jose perez <sinfallas@gmail.com>
 Date:   Sat Dec 5 18:34:37 2015 -0430
 
