@@ -10,7 +10,6 @@ error_log="/var/log/installer_error.log"
 miicono="--window-icon=/usr/share/icons/install-icon.png"
 rsync_excludes="/tmp/installer_exclude.list"
 home_boot_excludes="/tmp/home_boot_exclude.list"
-initt="/tmp/inittab.debian"
 parti="/tmp/particionador"
 swapfile_blocksize="1024"
 swapfile_count="262144"
@@ -393,82 +392,6 @@ cat > "$home_boot_excludes" <<EOF
 EOF
 chmod 666 "$home_boot_excludes"
 
-cat > "$initt" <<EOF
-
-# /etc/inittab: init(8) configuration.
-# $Id: inittab,v 1.91 2002/01/25 13:35:21 miquels Exp $
-
-# The default runlevel.
-id:2:initdefault:
-
-# Boot-time system configuration/initialization script.
-# This is run first except when booting in emergency (-b) mode.
-si::sysinit:/etc/init.d/rcS
-
-# What to do in single-user mode.
-~~:S:wait:/sbin/sulogin
-
-# /etc/init.d executes the S and K scripts upon change
-# of runlevel.
-#
-# Runlevel 0 is halt.
-# Runlevel 1 is single-user.
-# Runlevels 2-5 are multi-user.
-# Runlevel 6 is reboot.
-
-l0:0:wait:/etc/init.d/rc 0
-l1:1:wait:/etc/init.d/rc 1
-l2:2:wait:/etc/init.d/rc 2
-l3:3:wait:/etc/init.d/rc 3
-l4:4:wait:/etc/init.d/rc 4
-l5:5:wait:/etc/init.d/rc 5
-l6:6:wait:/etc/init.d/rc 6
-# Normally not reached, but fallthrough in case of emergency.
-z6:6:respawn:/sbin/sulogin
-
-# What to do when CTRL-ALT-DEL is pressed.
-ca:12345:ctrlaltdel:/sbin/shutdown -t1 -a -r now
-
-# Action on special keypress (ALT-UpArrow).
-#kb::kbrequest:/bin/echo "Keyboard Request--edit /etc/inittab to let this work."
-
-# What to do when the power fails/returns.
-pf::powerwait:/etc/init.d/powerfail start
-pn::powerfailnow:/etc/init.d/powerfail now
-po::powerokwait:/etc/init.d/powerfail stop
-
-# /sbin/getty invocations for the runlevels.
-#
-# The "id" field MUST be the same as the last
-# characters of the device (after "tty").
-#
-# Format:
-#  <id>:<runlevels>:<action>:<process>
-#
-# Note that on most Debian systems tty7 is used by the X Window System,
-# so if you want to add more getty's go ahead but skip tty7 if you run X.
-#
-1:2345:respawn:/sbin/getty 38400 tty1
-#2:23:respawn:/sbin/getty 38400 tty2
-#3:23:respawn:/sbin/getty 38400 tty3
-#4:23:respawn:/sbin/getty 38400 tty4
-#5:23:respawn:/sbin/getty 38400 tty5
-#6:23:respawn:/sbin/getty 38400 tty6
-
-# Example how to put a getty on a serial line (for a terminal)
-#
-#T0:23:respawn:/sbin/getty -L ttyS0 9600 vt100
-#T1:23:respawn:/sbin/getty -L ttyS1 9600 vt100
-
-# Example how to put a getty on a modem line.
-#
-#T3:23:respawn:/sbin/mgetty -x0 -s 57600 ttyS3
-
-EOF
-chmod 666 "$initt"
-
-#====
-
 [[ $DISPLAY ]] || { echo "No hay un servidor X corriendo. Saliendo..." ; exit 1 ; }
 
 if ! [[ -d /lib/live/mount/rootfs ]]; then
@@ -500,18 +423,15 @@ Si usted no entiende una opcion, probablemente no la necesite." --checklist --co
   FALSE 01 "Cambiar nombre de usuario" \
   FALSE 02 "Crear una particion /home separada" \
   TRUE 03 "Crear una particion /boot separada" \
-  FALSE 04 "Usar una particion swap existente en lugar de un archivo" \
-  FALSE 05 "Cifra la raiz del sistema de archivos (requiere /boot separada)" \
-  FALSE 06 "Cifra la particion /home (requiere /home separada)" \
-  FALSE 07 "Escribe data aleatoria a las particiones cifradas (mas seguro)" \
-  FALSE 08 "Escribe ceros a todas las particiones (para borrar la data previa)" \
-  FALSE 09 "No instala el bootloader" \
-  FALSE	10 "No formatea el sistema de archivos" \
-  FALSE 11 "Usar UUID en /etc/fstab" \
-  FALSE 12 "Usar etiquetas del sistema de archivos en /etc/fstab" \
-  FALSE 13 "Cambiar hostname" \
-  FALSE 14 "Desactivar acceso automatico al escritorio" \
-  FALSE 15 "Desactivar acceso automatico a la consola")
+  FALSE 04 "Cifra la raiz del sistema de archivos (requiere /boot separada)" \
+  FALSE 05 "Cifra la particion /home (requiere /home separada)" \
+  FALSE 06 "Escribe data aleatoria a las particiones cifradas (mas seguro)" \
+  FALSE 07 "Escribe ceros a todas las particiones (para borrar la data previa)" \
+  FALSE 08 "No instala el bootloader" \
+  FALSE	09 "No formatea el sistema de archivos" \
+  FALSE 10 "Usar UUID en /etc/fstab" \
+  FALSE 11 "Usar etiquetas del sistema de archivos en /etc/fstab" \
+  FALSE 12 "Cambiar hostname")
 fi
 
 if [[ $? = 1 ]]; then
@@ -531,32 +451,28 @@ if $(echo $opts | grep -q 03); then
 fi
 
 if $(echo $opts | grep -q 04); then
-	use_existing_swap="yes"
-fi
-
-if $(echo $opts | grep -q 05); then
 	encrypt_os="yes"
 fi
 
-if $(echo $opts | grep -q 06); then
+if $(echo $opts | grep -q 05); then
 	encrypt_home="yes"
 fi
 
-if $(echo $opts | grep -q 07); then
+if $(echo $opts | grep -q 06); then
 	write_random="yes"
 fi
 
-if $(echo $opts | grep -q 08); then
+if $(echo $opts | grep -q 07); then
 	write_zero="yes"               
 fi
 
-if $(echo $opts | grep -q 09); then
+if $(echo $opts | grep -q 08); then
 	bootloader="no"
 else
 	bootloader="yes"
 fi
 
-if $(echo $opts | grep -q 10); then
+if $(echo $opts | grep -q 09); then
 	if [[ $encrypt_os = "yes" ]] || [[ $encrypt_home = "yes" ]]; then
 		no_format=""
 	else
@@ -564,7 +480,7 @@ if $(echo $opts | grep -q 10); then
 	fi
 fi
 
-if $(echo $opts | grep -q 11); then
+if $(echo $opts | grep -q 10); then
 	if [[ $encrypt_os = "yes" ]] || [[ $encrypt_home = "yes" ]]; then
 		uuid_message="--> UUIDs en fstab no funcionan con sistemas cifrados y
  no seran usados. Edite el fstab manualmente despues de la instalacion."
@@ -573,7 +489,7 @@ if $(echo $opts | grep -q 11); then
 	fi
 fi
 
-if $(echo $opts |grep -q 12); then
+if $(echo $opts |grep -q 11); then
 	if [[ $encrypt_os = "yes" ]] || [[ $encrypt_home = "yes" ]]; then
 		disklabel_message="--> Disk labels en fstab no funcionan con sistemas cifrados y
  no seran usados. Edite el fstab manualmente despues de la instalacion."
@@ -585,16 +501,8 @@ if $(echo $opts |grep -q 12); then
 	fi
 fi
 
-if $(echo $opts | grep -q 13); then
+if $(echo $opts | grep -q 12); then
 	change_hostname="yes"
-fi
-
-if $(echo $opts | grep -q 14); then
-	disable_auto_desktop="yes"
-fi
-
-if $(echo $opts | grep -q 15); then
-	disable_auto_console="yes"
 fi
 
 if [[ $encrypt_os = "yes" ]] || [[ $encrypt_home = "yes" ]]; then
@@ -834,23 +742,6 @@ if [[ -n $home_dev ]]; then
 	fi
 fi
 
-choose_swap () {
-	swap_info=$(/sbin/blkid | grep swap | awk '{print "\n" $0 }' | yad "$miicono" --center --list --title="Particion swap" --text="Seleccione una particion para swap." --separator="" --column ' ' --column 'Particiones' --height=180 --width=600 --button="ACEPTAR":0)
-	swap_dev=$(echo $swap_info | awk -F: '{ print $1 }')
-	if [[ -z $swap_dev ]]; then
-		"$errores" --text="No selecciono una particion para swap. Haga clic en ACEPTAR para usar un archivo en su lugar o en Cancel para salir del programa."
-		if [[ $? = 0 ]]; then
-			use_existing_swap=""
-		else
-			exit 1
-		fi
-	fi
-}
-
-if [[ $use_existing_swap = "yes" ]]; then
-	choose_swap
-fi
-
 if [[ $change_hostname = "yes" ]]; then
 	select_hostname
 else
@@ -897,14 +788,6 @@ fi
 if [[ $encrypt_os = yes ]] || [[ $encrypt_home = yes ]]; then
 	proceed_message="***  IF YOU PROCEED, YOU WILL NEED TO RESPOND TO SOME QUESTIONS IN THE TERMINAL.   Be prepared to create 
     passphrases for any encrypted partitions (several times each.) When you see the progress bar come up, you can take a break."
-fi
-
-if [[ $disable_auto_desktop = "yes" ]]; then
-	desktop_message="Autologin en el escritorio se desactivara."
-fi
-
-if [[ $disable_auto_console = "yes" ]]; then
-	console_message="Autologin en la consola se desactivara."
 fi
 
 if [[ $no_format = "yes" ]]; then
@@ -1041,11 +924,9 @@ if [[ -n $boot_dev ]]; then
 	rsync -av /boot/ /target_boot/ --exclude-from="$home_boot_excludes" | tee >(yad "$miicono" --auto-close --progress --pulsate --width=350 --title="Copiando archivos a la particion boot.")
 fi
 
-if ! [[ $use_existing_swap = "yes" ]]; then
-	dd if=/dev/zero of=/target/swapfile bs="$swapfile_blocksize" count="$swapfile_count" | \
-	tee >(yad "$miicono" --auto-close --progress --pulsate --width=350 --title="Creando un archivo swap...")
-	mkswap /target/swapfile ; check_exit 
-fi
+dd if=/dev/zero of=/target/swapfile bs="$swapfile_blocksize" count="$swapfile_count" | \
+tee >(yad "$miicono" --auto-close --progress --pulsate --width=350 --title="Creando un archivo swap...")
+mkswap /target/swapfile ; check_exit
 
 if [[ -f /target/usr/sbin/update-initramfs.distrib ]]; then
 	cp /target/usr/sbin/update-initramfs.distrib /target/usr/sbin/update-initramfs
@@ -1064,47 +945,6 @@ fi
 if [[ -e /target/usr/bin/updatedb.mlocate ]]; then
 	if ! [[ -x /target/usr/bin/updatedb.mlocate ]]; then
 		chmod +x /target/usr/bin/updatedb.mlocate
-	fi
-fi
-
-if [[ $disable_auto_desktop = "yes" ]]; then
-	if [[ -f /target/etc/gdm/gdm.conf ]]; then
-		sed -i 's/^AutomaticLogin/#AutomaticLogin/' /target/etc/gdm/gdm.conf
-	fi
-
-	if [[ -f /target/etc/gdm3/daemon.conf ]]; then
-		sed -i 's/^AutomaticLogin/#AutomaticLogin/' /target/etc/gdm3/daemon.conf
-	fi
-
-	if [[ -f /target/etc/lightdm/lightdm.conf ]]; then
-		sed -i 's/^autologin/#autologin/g' /target/etc/lightdm/lightdm.conf
-	fi
-
-	if [ -f /target/etc/default/kdm.d/live-autologin ]; then
-		rm -f /target/etc/default/kdm.d/live-autologin
-	fi
-	if [ -f /target/etc/kde3/kdm/kdmrc ]; then
-		sed -i -e 's/^AutoLogin/#AutoLogin/g' /target/etc/kde3/kdm/kdmrc
-		sed -i -e 's/^AutoReLogin/#AutoReLogin/g' /target/etc/kde3/kdm/kdmrc
-	fi
-	if [ -f /target/etc/kde4/kdm/kdmrc ]; then
-		sed -i -e 's/^AutoLogin/#AutoLogin/g' /target/etc/kde4/kdm/kdmrc
-		sed -i -e 's/^AutoReLogin/#AutoReLogin/g' /target/etc/kde4/kdm/kdmrc
-	fi
-
-	if [[ -f /target/etc/default/kdm-trinity.d/live-autologin ]]; then
-		sed -i 's/^AUTOLOGIN/#AUTOLOGIN/g' /target/etc/default/kdm-trinity.d/live-autologin
-	fi
-	if [ -f /target/etc/trinity/kdm/kdmrc ]; then
-		sed -i -e 's/^AutoLogin/#AutoLogin/g' /target/etc/trinity/kdm/kdmrc
-		sed -i -e 's/^AutoReLogin/#AutoReLogin/g' /target/etc/trinity/kdm/kdmrc
-	fi
-fi	
-
-if [[ $disable_auto_console = "yes" ]]; then
-	if grep -q "respawn:/bin/login -f" /target/etc/inittab ; then
-		mv -f /target/etc/inittab /target/etc/inittab.old
-		mv -f /tmp/inittab.debian /target/etc/inittab
 	fi
 fi
 
@@ -1195,18 +1035,6 @@ if [[ -n $boot_dev ]]; then
 		echo -e "$boot_part\t/boot\t$fs_type_boot\tdefaults\t0\t2" >> /target/etc/fstab
 	fi
 	check_exit
-fi
-
-if [[ $use_existing_swap = "yes" ]]; then
-	if [[ $use_uuid = yes ]]; then
-		swap_part="$(/sbin/blkid -s UUID $swap_dev | awk '{ print $2 }' | sed 's/\"//g')"
-	else
-		swap_part="$swap_dev"
-	fi
-	echo -e "\n Adding swap entry to fstab...\n"
-	echo -e "$swap_part\tswap\tswap\tdefaults\t0\t0" >> /target/etc/fstab
-elif ! [[ $use_existing_swap = "yes" ]]; then
-	echo -e "/swapfile\tswap\tswap\tdefaults\t0\t0" >> /target/etc/fstab
 fi
 
 if [[ $encrypt_os = yes ]]; then
