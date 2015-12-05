@@ -1,4 +1,16 @@
-commit 255ec79fb32f9cfcf08f8047ba3746aee9a502ee (HEAD, origin/master, origin/HEAD, master)
+commit 39652f83a6aa1130a900ea7b996a05d551ba48af (HEAD, origin/master, origin/HEAD, master)
+Author: jose perez <sinfallas@gmail.com>
+Date:   Fri Dec 4 23:24:29 2015 -0430
+
+    * se agrega comprobacion de root
+
+commit 52fd4b5016798a170e9e54c04bd72bd2de131d0a
+Author: jose perez <sinfallas@gmail.com>
+Date:   Fri Dec 4 23:21:12 2015 -0430
+
+    * changelog
+
+commit 255ec79fb32f9cfcf08f8047ba3746aee9a502ee
 Author: jose perez <sinfallas@gmail.com>
 Date:   Fri Dec 4 23:19:41 2015 -0430
 
