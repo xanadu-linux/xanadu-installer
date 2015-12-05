@@ -12,7 +12,6 @@ swapfile_count="262144"
 pmount_fixed="no"
 fs_type_boot="ext4"
 grubversion=$(dpkg -l | grep -v bin | grep -v doc | awk '$2 ~ "grub-[pc]" {print $2}' | grep -v amd64 | grep -v i386 | grep -v common)
-dispositivo=$(fdisk -l | grep "Disco" | awk '{print $2}' | sed 's/.$//g' | yad --center --no-click --list --title="Disco a particionar" --text="Seleccione el disco que desea particionar." --separator="" --column 'Dispositivo' --height 380 --width 150 --button="ACEPTAR":0)
 source /usr/bin/variables
 rm -f "$parti"
 exec 2>"$error_log"
@@ -27,6 +26,7 @@ function advert () {
 }
 
 function dialogopart () {
+	dispositivo=$(fdisk -l | grep "Disco" | awk '{print $2}' | sed 's/.$//g' | yad --center --no-click --list --title="Disco a particionar" --text="Seleccione el disco que desea particionar." --separator="" --column 'Dispositivo' --height 380 --width 150 --button="ACEPTAR":0)
 	if [[ -z "$dispositivo" ]] ; then
 		yad --center --window-icon=error --title="Error" --button="Ir atras":0 --button="Salir":1 --text="No selecciono nada. Debe escoger un disco."
 		if [[ $? = 0 ]] ; then
@@ -294,7 +294,7 @@ function check_exit () {
 }
 
 function preinstall () {
-	yad "$miicono" --image=gtk-dialog-info --center --title=Particionamiento --text-align=fill --borders=6 --button="Particiones Convencionales":0 --button="Utilizar LVM":1 --button="Regresar":2 --button="Salir":3 --text="Seleccione el tipo de particiones que desea utilizar."
+	yad "$miicono" --image=gtk-dialog-info --center --title="Particionamiento" --text-align=fill --borders=6 --button="Particiones Convencionales":0 --button="Utilizar LVM":1 --button="Regresar":2 --button="Salir":3 --text="Seleccione el tipo de particiones que desea utilizar."
 	ans="$?"
 	case $ans in
 		0) miparticion ; check_exit ;;
@@ -591,7 +591,7 @@ fi
 
 if [[ $encrypt_os = "yes" ]] || [[ $encrypt_home = "yes" ]]; then
 	if ! [[ -f /sbin/cryptsetup ]]; then
-        	yad --center --title=Error --window-icon=error --button="Proceder sin particiones cifradas":0 --button="Salir":1 --text="Usted necesitas instalar cryptsetup y ejecutar 'sudo modprobe dm-mod' antes de usar el cifrado."
+        	yad --center --title="Error" --window-icon=error --button="Proceder sin particiones cifradas":0 --button="Salir":1 --text="Usted necesitas instalar cryptsetup y ejecutar 'sudo modprobe dm-mod' antes de usar el cifrado."
 		if [[ $? = 0 ]]; then
 			encrypt_os="no"
 			encrypt_home="no"
@@ -601,22 +601,26 @@ if [[ $encrypt_os = "yes" ]] || [[ $encrypt_home = "yes" ]]; then
 	fi
 fi    
 
-yad "$miicono" --center --title=Particionamiento --text-align=fill --borders=6 --button="Ejecutar GParted":0 --button="Automatico":1 --button="Saltar este paso":2 --button="Salir":3 --text="Necesita tener una particion dedicada a /BOOT y otra particion dedicada a la RAIZ ademas de una particion SWAP. Si usted ya tiene las particiones, puede saltar este paso.
+if [[ $install = "expert" ]]; then
+	yad "$miicono" --center --title="Particionamiento" --text-align=fill --borders=6 --button="Ejecutar GParted":0 --button="Ejecutar Cfdisk":1 --button="Saltar este paso":2 --button="Salir":3 --text="Seleccione el metodo que utilizara para crear las particiones. Si usted ya tiene las particiones, puede saltar este paso.
 
   Ejecutar particionador ahora?"
 	ans="$?"
 	case $ans in
-		0) 	gparted ; check_exit ;;
-		1)  preinstall ;;
+		0) gparted ; check_exit ;;
+		1) xterm -fa monaco -fs 12 -geometry 90x20+0+0 -hold -e cfdisk ;;
 		2)  ;;
 		3) exit 0 ;;
 	esac
+else
+	preinstall
+fi
 
 swapon -p 25 -f $(fdisk -l | grep "swap" | awk '{print $1}')
 
 if [[ $sep_boot = "no" ]]; then
 	if [[ $encrypt_os = "yes" ]]; then
-		yad --center --window-icon=error --title=Error --button="Proceder sin particiones cifradas":0 --button="Salir":1 --text="Usted debe tener una particion /boot sin cifrar si usted quiere bootear un sistema operativo cifrado. Puede proceder sin cifrar la raiz del sistema o puede salir y comenzar de nuevo."
+		yad --center --window-icon=error --title="Error" --button="Proceder sin particiones cifradas":0 --button="Salir":1 --text="Usted debe tener una particion /boot sin cifrar si usted quiere bootear un sistema operativo cifrado. Puede proceder sin cifrar la raiz del sistema o puede salir y comenzar de nuevo."
 		if [[ $? = 0 ]]; then
 			encrypt_os="no"
 		else
@@ -635,15 +639,15 @@ choose_grub () {
 		" --button=MBR:0 --button=Partition:1 --button="Sin Bootloader":2 --button="Salir":3
 	answer="$?"
 	if [[ $answer = 0 ]]; then
-		grub_dev=$(find /dev -mindepth 1 -maxdepth 1  -name "*[sh]d[a-z]" | sort | awk '{print "\n" $0 }' | yad "$miicono" --center --list --separator="" --title=Bootloader --text="Selecione la ubicacion para instalar el bootloader.
+		grub_dev=$(find /dev -mindepth 1 -maxdepth 1  -name "*[sh]d[a-z]" | sort | awk '{print "\n" $0 }' | yad "$miicono" --center --list --separator="" --title="Bootloader" --text="Selecione la ubicacion para instalar el bootloader.
 " --column ' ' --column 'Disco Duro' --height=200)
 		if [[ -z $grub_dev ]]; then
-			yad --center --title=Error --window-icon=error --button="Si, Estoy seguro.":0 --button="Ir atras":1 --text="Ningun bootloader sera instalado. Esta seguro de continuar?"
+			yad --center --title="Error" --window-icon=error --button="Si, Estoy seguro.":0 --button="Ir atras":1 --text="Ningun bootloader sera instalado. Esta seguro de continuar?"
 			if [[ $? = 1 ]]; then
 				choose_grub
 			fi
 		elif ! [[ -b $grub_dev ]]; then
-			yad --center --title=Error --window-icon=error --button="Salir":0 --button="Ir atras":1 --text="Algo esta mal.  $grub_dev no es un dispositivo de bloques."
+			yad --center --title="Error" --window-icon=error --button="Salir":0 --button="Ir atras":1 --text="Algo esta mal.  $grub_dev no es un dispositivo de bloques."
 			if [[ $? = 0 ]]; then
 				exit 1
 			else
@@ -653,12 +657,12 @@ choose_grub () {
 	elif [[ $answer = 1 ]]; then
 		grub_partition=$(find /dev -mindepth 1 -maxdepth 1  -name "*[sh]d[a-z][1-9]*" | sort | awk '{print "\n" $0 }' | yad "$miicono" --center --list --title="Bootloader" --text="Seleccione una particion para el bootloader (GRUB)." --separator="" --column ' ' --column 'Particiones' --height=380 --width=150)
 		if [[ -z $grub_partition ]]; then
-			yad --center --title=Error --window-icon=error --button="Si, Estoy seguro.":0 --button="Ir atras":1 --text="Ningun bootloader sera instalado. Esta seguro de continuar?"
+			yad --center --title="Error" --window-icon=error --button="Si, Estoy seguro.":0 --button="Ir atras":1 --text="Ningun bootloader sera instalado. Esta seguro de continuar?"
 			if [[ $? = 1 ]]; then
 				choose_grub
 			fi
 		elif ! [[ -b $grub_partition ]]; then
-			yad --center --title=Error --window-icon=error --button="Salir":0 --button="Ir atras":1 --text="Algo esta mal.  $grub_partition no es un dispositivo de bloques."
+			yad --center --title="Error" --window-icon=error --button="Salir":0 --button="Ir atras":1 --text="Algo esta mal.  $grub_partition no es un dispositivo de bloques."
 			if [[ $? = 0 ]]; then
 				exit 1
 			else
@@ -666,7 +670,7 @@ choose_grub () {
 			fi
 		fi
 	elif [[ $answer = 2 ]]; then
-		yad "$miicono" --center --text-align=fill --borders=6 --title=Bootloader --text="  Procediendo sin un bootloader. 
+		yad "$miicono" --center --text-align=fill --borders=6 --title="Bootloader" --text="  Procediendo sin un bootloader. 
   Necesitara de un procedimiento especial para bootear su sistema. Be sure that you know what you're doing." --button="Proceder":0 --button="Salir":1
 		if [[ $? = 1 ]]; then
 			exit 0
@@ -682,16 +686,16 @@ if [[ $install = "expert" ]]; then
 	fi
 fi
 
-if [[ -f "$parti" ]]; then
-	echo "1" > /dev/null
-else
+if ! [[ -f "$parti" ]]; then
 	blkid -c /dev/null | awk '{print $1 $2}' | yad "$miicono" --timeout 20 --text-info --title="Lista de particiones" --text="Lista de particiones (para referencia) Usted puede necesitar esto mas adelante." --width 820 --height 400 --button="Cerrar":0 & sleep 2
 fi
 
 if [[ -f "$parti" ]]; then
 	boot_dev=$(blkid -c /dev/null | grep "boot" | awk '{print $1}' | sed 's/.$//g')
 else
-	choose_boot
+	if [[ $sep_boot = "yes" ]]; then
+		choose_boot
+	fi
 fi
 
 choose_root () {
@@ -701,21 +705,21 @@ choose_root () {
 	install_dev4=$(echo "$install_dev3" | yad --center --no-click --list --title="Particion raiz" --text="Seleccione una particion para instalar el sistema operativo." --column 'Particiones' --height 380 --width 150 --button="OK":0)
 	install_dev=$(echo $install_dev4 | sed 's/.$//g')
 	if [[ -z $install_dev ]]; then
-		yad --center --window-icon=error --title=Error --button="Ir atras":0 --button="Salir":1 --text="No selecciono nada. Debe escoger una particion para la instalacion. Que quiere hacer?"
+		yad --center --window-icon=error --title="Error" --button="Ir atras":0 --button="Salir":1 --text="No selecciono nada. Debe escoger una particion para la instalacion. Que quiere hacer?"
 		if [[ $? = 0 ]]; then
 			choose_root
 		else
 			exit 1
 		fi
 #elif ! [[ -b $install_dev ]]; then
-#    yad --center --text-align=fill --borders=6 --window-icon=error --title=Error  --button="Ir atras":0 --button="Salir":1 --text="    Algo esta mal. Tal vez usted marco mas de una casilla. Usted dijo que quiere instalar el sistema en: $install_dev"
+#    yad --center --text-align=fill --borders=6 --window-icon=error --title="Error" --button="Ir atras":0 --button="Salir":1 --text="    Algo esta mal. Tal vez usted marco mas de una casilla. Usted dijo que quiere instalar el sistema en: $install_dev"
 #        if [[ $? = 0 ]]; then
 #            choose_root
 #        else
 #            exit 1
 #        fi
 	elif [[ $install_dev = $boot_dev ]]; then
-		yad --center --window-icon=error --title=Error --text="Selecciono la misma particion para la raiz y para /boot. Intente de nuevo." --button="ACEPTAR":0
+		yad --center --window-icon=error --title="Error" --text="Selecciono la misma particion para la raiz y para /boot. Intente de nuevo." --button="ACEPTAR":0
 		choose_root
 	fi
 }
@@ -738,7 +742,7 @@ choose_fs_os () {
   "btrfs" \
   "ext4")
 	if [[ -z $fs_type_os ]]; then
-		yad --center --window-icon=error --title=Error --button="Ir atras":0 --button="Salir":1 --text="Debe escoger un sistema de archivos para
+		yad --center --window-icon=error --title="Error" --button="Ir atras":0 --button="Salir":1 --text="Debe escoger un sistema de archivos para
 el sistema operativo"
 		if [[ $? = 0 ]]; then
 			choose_fs_os
@@ -766,7 +770,7 @@ choose_home () {
 	home_dev=$(find /dev -mindepth 1 -maxdepth 1  -name "*[sh]d[a-z][1-9]*" | sort | awk '{print "\n" $0 }' | yad "$miicono" --center --list --title="Particion para /home" --text="Seleccione una particion para /home" --separator="" --column ' ' --column 'Particiones' --height=400 --width=150 --button="ACEPTAR":0)
 	if [[ -n $home_dev ]]; then
 		if ! [[ -b $home_dev ]]; then
-			yad --center --info --title=Error --button="Ir atras":0 --button="Salir":1 --text="    Algo esta mal. 
+			yad --center --info --title="Error" --button="Ir atras":0 --button="Salir":1 --text="    Algo esta mal. 
     $home_dev no es un dispositivo de bloques. "
 			if [[ $? = 0 ]]; then
 				choose_home
@@ -775,7 +779,7 @@ choose_home () {
 			fi
 		elif
 			[[ $install_dev = $home_dev ]]; then
-			yad --center --text-align=fill --borders=6 --window-icon=error --title=Error --text="Selecciono la misma particion para la raiz y para /home. Si usted no quiere una particion separada para /home, haga clic en ACEPTAR sin seleccionar una." --button="Ir atras":0 --button="Salir":1
+			yad --center --text-align=fill --borders=6 --window-icon=error --title="Error" --text="Selecciono la misma particion para la raiz y para /home. Si usted no quiere una particion separada para /home, haga clic en ACEPTAR sin seleccionar una." --button="Ir atras":0 --button="Salir":1
 			if [[ $? = 0 ]]; then
 				choose_home
 			else
@@ -783,7 +787,7 @@ choose_home () {
 			fi
 		elif
 			[[ $boot_dev = $home_dev ]]; then
-			yad --center --window-icon=error --title=Error --text="Selecciono la misma particion para /home y para /boot. Intente de nuevo." --button="Ir atras":0 --button="Salir":1
+			yad --center --window-icon=error --title="Error" --text="Selecciono la misma particion para /home y para /boot. Intente de nuevo." --button="Ir atras":0 --button="Salir":1
 			if [[ $? = 0 ]]; then
 				choose_home
 			else
@@ -805,7 +809,7 @@ choose_fs_home () {
   "ext4")
 	fi
 	if [[ -z $fs_type_home ]]; then
-		yad --center --window-icon=error --title=Error --button="Ir atras":0 --button="Salir":1 --text="Debe escoger un sistema de archivos para /home"
+		yad --center --window-icon=error --title="Error" --button="Ir atras":0 --button="Salir":1 --text="Debe escoger un sistema de archivos para /home"
 		if [[ $? = 0 ]]; then
 			choose_fs_home
 		else
@@ -826,7 +830,7 @@ choose_swap () {
 	swap_info=$(/sbin/blkid | grep swap | awk '{print "\n" $0 }' | yad "$miicono" --center --list --title="Particion swap" --text="Seleccione una particion para swap." --separator="" --column ' ' --column 'Particiones' --height=180 --width=600 --button="ACEPTAR":0)
 	swap_dev=$(echo $swap_info | awk -F: '{ print $1 }')
 	if [[ -z $swap_dev ]]; then
-		yad --center --text-align=fill --borders=6 --window-icon=error --title=Error --text="No selecciono una particion para swap. Haga clic en ACEPTAR para usar un archivo en su lugar o en Cancel para salir del programa."
+		yad --center --text-align=fill --borders=6 --window-icon=error --title="Error" --text="No selecciono una particion para swap. Haga clic en ACEPTAR para usar un archivo en su lugar o en Cancel para salir del programa."
 		if [[ $? = 0 ]]; then
 			use_existing_swap=""
 		else
@@ -901,7 +905,7 @@ else
 	install_dev_message="--> El sistema operativo se instalara en $install_dev y formateado como $fs_type_os$os_enc_message"
 fi
 
-yad "$miicono" --center --text-align=fill --borders=6 --info --title=Summary --button="Proceder con la instalacion.":0 --button="Salir":1 --text="Por favor CIERRE cualquier otra aplicacion en ejecucion.
+yad "$miicono" --center --text-align=fill --borders=6 --info --title="Sumario" --button="Proceder con la instalacion.":0 --button="Salir":1 --text="Por favor CIERRE cualquier otra aplicacion en ejecucion.
 
 Aqui hay un sumario de lo que se hara. ESTA ES SU ULTIMA OPORTUNIDAD PARA SALIR antes de proceder con la instalacion.
 
@@ -1322,7 +1326,7 @@ finalizando_1 | "$progreso" --progress-text="Optimizando el sistema, por favor e
 cp "$error_log" /target/var/log/
 cleanup
 
-yad "$miicono" --image=gtk-dialog-info --timeout 10 --fixed --center --width=500 --title=Instalador --text-align=fill --borders=6 --button="Apagar":0 --button="Reiniciar":1 --button="Salir":2 --text=" Instalacion completa. \n\n Durante el primer inicio es posible que el sistema se reinicie automaticamente.\n\n Ejecute el post-instalador luego del primer inicio de su sistema.\n"
+yad "$miicono" --image=gtk-dialog-info --timeout 10 --fixed --center --width=500 --title="Instalador" --text-align=fill --borders=6 --button="Apagar":0 --button="Reiniciar":1 --button="Salir":2 --text=" Instalacion completa. \n\n Durante el primer inicio es posible que el sistema se reinicie automaticamente.\n\n Ejecute el post-instalador luego del primer inicio de su sistema.\n"
 ans="$?"
 case $ans in
 	0) poweroff ;;
