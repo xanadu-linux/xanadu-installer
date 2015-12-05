@@ -1,4 +1,6 @@
 #!/bin/bash
+# Made by Sinfallas <sinfallas@yahoo.com>
+# Licence: GPL-2
 LC_ALL=C
 advertencia='yad --skip-taskbar --button=ACEPTAR:1 --fixed --center --text-align=fill --borders=6 --title="ADVERTENCIA"'
 memoria=$(grep "MemTotal" /proc/meminfo | awk '{print $2}')

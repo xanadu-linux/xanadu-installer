@@ -1,4 +1,6 @@
 #!/bin/bash
+# Made by Sinfallas <sinfallas@yahoo.com>
+# Licence: GPL-2
 # Based on refractainstaller-8.0.3 by Dean Linkous
 LC_ALL=C
 if [[ $USER != root ]]; then
@@ -24,7 +26,7 @@ exec 2>"$error_log"
 
 function advert () {
 	yad --skip-taskbar --button=ACEPTAR:0 --button=SALIR:1 --fixed --center --text-align=fill --borders=6 --title="ADVERTENCIA" --text="Esta opción eliminara toda la informacion del disco y no podra revertirse."
-	if [[ $? = 0 ]] ; then
+	if [[ $? = 0 ]]; then
 		echo "1" > /del/null
 	else
 		source refractainstaller-yad
@@ -33,9 +35,9 @@ function advert () {
 
 function dialogopart () {
 	dispositivo=$(fdisk -l | grep "Disco" | awk '{print $2}' | sed 's/.$//g' | yad --center --no-click --list --title="Disco a particionar" --text="Seleccione el disco que desea particionar." --separator="" --column 'Dispositivo' --height 380 --width 150 --button="ACEPTAR":0)
-	if [[ -z "$dispositivo" ]] ; then
+	if [[ -z "$dispositivo" ]]; then
 		"$errores" --button="Ir atras":0 --button="Salir":1 --text="No selecciono nada. Debe escoger un disco."
-		if [[ $? = 0 ]] ; then
+		if [[ $? = 0 ]]; then
 			source refractainstaller-yad
 		else
 			exit 1
@@ -1001,7 +1003,7 @@ if [[ -n $home_dev ]]; then
 		home_part=$home_dev
 	fi
 	if [[ $no_format != "yes" ]]; then
-		if [[ $fs_type_os = ext4 ]];then
+		if [[ $fs_type_os = ext4 ]]; then
 			mkfs.$fs_type_home -F "$home_part" ; check_exit
 			tune2fs -r 10000 "$home_part" ; check_exit
 		else
