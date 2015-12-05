@@ -2,7 +2,7 @@
 # Made by Sinfallas <sinfallas@yahoo.com>
 # Licence: GPL-2
 LC_ALL=C
-advertencia='yad --skip-taskbar --button=ACEPTAR:1 --fixed --center --text-align=fill --borders=6 --title="ADVERTENCIA"'
+advertencia='yad --skip-taskbar --button="Aceptar":1 --fixed --center --text-align=fill --borders=6 --title="ADVERTENCIA"'
 memoria=$(grep "MemTotal" /proc/meminfo | awk '{print $2}')
 cpu=$(lscpu | grep "MHz" | awk '{print $3}')
 if ! [[ -d /lib/live/mount/rootfs ]]; then
