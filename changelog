@@ -1,4 +1,16 @@
-commit 649f65dea0c0303585eff1b47533cecb26f5bf06 (HEAD, origin/master, origin/HEAD, master)
+commit aeaa1f8858a8363544279de30d933470fc12852c (HEAD, origin/master, origin/HEAD, master)
+Author: jose perez <sinfallas@gmail.com>
+Date:   Fri Dec 4 23:45:43 2015 -0430
+
+    * se agrega la licencia
+
+commit 01e299a068538a9359ebec424bf897dc80811ebf
+Author: jose perez <sinfallas@gmail.com>
+Date:   Fri Dec 4 23:37:30 2015 -0430
+
+    * changelog
+
+commit 649f65dea0c0303585eff1b47533cecb26f5bf06
 Author: jose perez <sinfallas@gmail.com>
 Date:   Fri Dec 4 23:37:10 2015 -0430
 
