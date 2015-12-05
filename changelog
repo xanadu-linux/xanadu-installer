@@ -1,4 +1,16 @@
-commit 39652f83a6aa1130a900ea7b996a05d551ba48af (HEAD, origin/master, origin/HEAD, master)
+commit 41225a08428899b9367cb0a94d5e9a23feb350a5 (HEAD, origin/master, origin/HEAD, master)
+Author: jose perez <sinfallas@gmail.com>
+Date:   Fri Dec 4 23:29:22 2015 -0430
+
+    * se elimina la dependencia del archivo variables
+
+commit 7bf21a3fcf015d3edbaeec0f31e9924e6af6efb2
+Author: jose perez <sinfallas@gmail.com>
+Date:   Fri Dec 4 23:25:10 2015 -0430
+
+    * changelog
+
+commit 39652f83a6aa1130a900ea7b996a05d551ba48af
 Author: jose perez <sinfallas@gmail.com>
 Date:   Fri Dec 4 23:24:29 2015 -0430
 
