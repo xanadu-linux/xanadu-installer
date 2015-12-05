@@ -1,4 +1,16 @@
-commit d24b4d1bf24809586f35c9dec429706554486286 (HEAD, origin/master, origin/HEAD, master)
+commit 390bf7a8ddd69e9a64f934d26e16f58302a79aa7 (HEAD, origin/master, origin/HEAD, master)
+Author: jose perez <sinfallas@gmail.com>
+Date:   Sat Dec 5 18:49:09 2015 -0430
+
+    * se eliminan las referencias en el codigo al nombre anterior
+
+commit 4069ae270aebe2d774677002115ad9ac3af12b39
+Author: jose perez <sinfallas@gmail.com>
+Date:   Sat Dec 5 18:38:29 2015 -0430
+
+    * changelog
+
+commit d24b4d1bf24809586f35c9dec429706554486286
 Author: jose perez <sinfallas@gmail.com>
 Date:   Sat Dec 5 18:38:12 2015 -0430
 
