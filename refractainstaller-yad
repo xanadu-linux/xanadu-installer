@@ -35,7 +35,7 @@ function advert () {
 function dialogopart () {
 	dispositivo=$(fdisk -l | grep "Disco" | awk '{print $2}' | sed 's/.$//g' | yad --center --no-click --list --title="Disco a particionar" --text="Seleccione el disco que desea particionar." --separator="" --column 'Dispositivo' --height 380 --width 150 --button="ACEPTAR":0)
 	if [[ -z "$dispositivo" ]]; then
-		"$errores" --button="Ir atras":0 --button="Salir":1 --text="No selecciono nada. Debe escoger un disco."
+		$errores --button="Ir atras":0 --button="Salir":1 --text="No selecciono nada. Debe escoger un disco."
 		if [[ $? = 0 ]]; then
 			source refractainstaller-yad
 		else
@@ -105,11 +105,11 @@ function milvm () {
 	if yad --skip-taskbar --fixed --center --text-align=fill --borders=6 --title="ADVERTENCIA" --text="Se recomienda utilizar un sistema de energia de respaldo para utilizar LVM"; then	
 	dialogopart
 		if [[ $(parted -s "$dispositivo" -- print | grep "Partition" | awk '{print $3}') = msdos ]]; then
-			milvm2 | "$progreso" --progress-text="Creando particiones, por favor espere..." --title="Particionando"
+			milvm2 | $progreso --progress-text="Creando particiones, por favor espere..." --title="Particionando"
 		else
-			milvm3 | "$progreso" --progress-text="Creando particiones, por favor espere..." --title="Particionando"
+			milvm3 | $progreso --progress-text="Creando particiones, por favor espere..." --title="Particionando"
 		fi
-	elsef
+	else
 		source refractainstaller-yad
 	fi
 }
@@ -124,7 +124,7 @@ function miparticion2 () {
 function miparticion () {
 	advert
 	dialogopart
-	miparticion2 | "$progreso" --progress-text="Creando particiones, por favor espere..." --title="Particionando"
+	miparticion2 | $progreso --progress-text="Creando particiones, por favor espere..." --title="Particionando"
 }
 
 function finalizando_1 () {
@@ -291,7 +291,7 @@ fi
 
 function check_exit () {
 	if [[ $? != 0 ]]; then
-		"$errores" --button="Continuar":0 --button="Salir ahora":1 --text="Error detectado: $?  $error_message
+		$errores --button="Continuar":0 --button="Salir ahora":1 --text="Error detectado: $?  $error_message
 \Vea $error_log para detalles. \n\nEsto puede no ser fatal.. Presione \"Continuar\" para proceder"
 		if [[ $? != 0 ]]; then
 			cleanup
@@ -507,7 +507,7 @@ fi
 
 if [[ $encrypt_os = "yes" ]] || [[ $encrypt_home = "yes" ]]; then
 	if ! [[ -f /sbin/cryptsetup ]]; then
-        	"$errores" --button="Proceder sin particiones cifradas":0 --button="Salir":1 --text="Usted necesitas instalar cryptsetup y ejecutar 'sudo modprobe dm-mod' antes de usar el cifrado."
+        	$errores --button="Proceder sin particiones cifradas":0 --button="Salir":1 --text="Usted necesitas instalar cryptsetup y ejecutar 'sudo modprobe dm-mod' antes de usar el cifrado."
 		if [[ $? = 0 ]]; then
 			encrypt_os="no"
 			encrypt_home="no"
@@ -536,7 +536,7 @@ swapon -p 25 -f $(fdisk -l | grep "swap" | awk '{print $1}')
 
 if [[ $sep_boot = "no" ]]; then
 	if [[ $encrypt_os = "yes" ]]; then
-		"$errores" --button="Proceder sin particiones cifradas":0 --button="Salir":1 --text="Usted debe tener una particion /boot sin cifrar si usted quiere bootear un sistema operativo cifrado. Puede proceder sin cifrar la raiz del sistema o puede salir y comenzar de nuevo."
+		$errores --button="Proceder sin particiones cifradas":0 --button="Salir":1 --text="Usted debe tener una particion /boot sin cifrar si usted quiere bootear un sistema operativo cifrado. Puede proceder sin cifrar la raiz del sistema o puede salir y comenzar de nuevo."
 		if [[ $? = 0 ]]; then
 			encrypt_os="no"
 		else
@@ -558,12 +558,12 @@ choose_grub () {
 		grub_dev=$(find /dev -mindepth 1 -maxdepth 1  -name "*[sh]d[a-z]" | sort | awk '{print "\n" $0 }' | yad "$miicono" --center --list --separator="" --title="Bootloader" --text="Selecione la ubicacion para instalar el bootloader.
 " --column ' ' --column 'Disco Duro' --height=200)
 		if [[ -z $grub_dev ]]; then
-			"$errores" --button="Si, Estoy seguro.":0 --button="Ir atras":1 --text="Ningun bootloader sera instalado. Esta seguro de continuar?"
+			$errores --button="Si, Estoy seguro.":0 --button="Ir atras":1 --text="Ningun bootloader sera instalado. Esta seguro de continuar?"
 			if [[ $? = 1 ]]; then
 				choose_grub
 			fi
 		elif ! [[ -b $grub_dev ]]; then
-			"$errores" --button="Salir":0 --button="Ir atras":1 --text="Algo esta mal.  $grub_dev no es un dispositivo de bloques."
+			$errores --button="Salir":0 --button="Ir atras":1 --text="Algo esta mal.  $grub_dev no es un dispositivo de bloques."
 			if [[ $? = 0 ]]; then
 				exit 1
 			else
@@ -573,12 +573,12 @@ choose_grub () {
 	elif [[ $answer = 1 ]]; then
 		grub_partition=$(find /dev -mindepth 1 -maxdepth 1  -name "*[sh]d[a-z][1-9]*" | sort | awk '{print "\n" $0 }' | yad "$miicono" --center --list --title="Bootloader" --text="Seleccione una particion para el bootloader (GRUB)." --separator="" --column ' ' --column 'Particiones' --height=380 --width=150)
 		if [[ -z $grub_partition ]]; then
-			"$errores" --button="Si, Estoy seguro.":0 --button="Ir atras":1 --text="Ningun bootloader sera instalado. Esta seguro de continuar?"
+			$errores --button="Si, Estoy seguro.":0 --button="Ir atras":1 --text="Ningun bootloader sera instalado. Esta seguro de continuar?"
 			if [[ $? = 1 ]]; then
 				choose_grub
 			fi
 		elif ! [[ -b $grub_partition ]]; then
-			"$errores" --button="Salir":0 --button="Ir atras":1 --text="Algo esta mal.  $grub_partition no es un dispositivo de bloques."
+			$errores --button="Salir":0 --button="Ir atras":1 --text="Algo esta mal.  $grub_partition no es un dispositivo de bloques."
 			if [[ $? = 0 ]]; then
 				exit 1
 			else
@@ -621,21 +621,21 @@ choose_root () {
 	install_dev4=$(echo "$install_dev3" | yad --center --no-click --list --title="Particion raiz" --text="Seleccione una particion para instalar el sistema operativo." --column 'Particiones' --height 380 --width 150 --button="OK":0)
 	install_dev=$(echo $install_dev4 | sed 's/.$//g')
 	if [[ -z $install_dev ]]; then
-		"$errores" --button="Ir atras":0 --button="Salir":1 --text="No selecciono nada. Debe escoger una particion para la instalacion. Que quiere hacer?"
+		$errores --button="Ir atras":0 --button="Salir":1 --text="No selecciono nada. Debe escoger una particion para la instalacion. Que quiere hacer?"
 		if [[ $? = 0 ]]; then
 			choose_root
 		else
 			exit 1
 		fi
 #elif ! [[ -b $install_dev ]]; then
-#    "$errores" --button="Ir atras":0 --button="Salir":1 --text="    Algo esta mal. Tal vez usted marco mas de una casilla. Usted dijo que quiere instalar el sistema en: $install_dev"
+#    $errores --button="Ir atras":0 --button="Salir":1 --text="    Algo esta mal. Tal vez usted marco mas de una casilla. Usted dijo que quiere instalar el sistema en: $install_dev"
 #        if [[ $? = 0 ]]; then
 #            choose_root
 #        else
 #            exit 1
 #        fi
 	elif [[ $install_dev = $boot_dev ]]; then
-		"$errores" --text="Selecciono la misma particion para la raiz y para /boot. Intente de nuevo." --button="ACEPTAR":0
+		$errores --text="Selecciono la misma particion para la raiz y para /boot. Intente de nuevo." --button="ACEPTAR":0
 		choose_root
 	fi
 }
@@ -658,7 +658,7 @@ choose_fs_os () {
   "btrfs" \
   "ext4")
 	if [[ -z $fs_type_os ]]; then
-		"$errores" --button="Ir atras":0 --button="Salir":1 --text="Debe escoger un sistema de archivos para
+		$errores --button="Ir atras":0 --button="Salir":1 --text="Debe escoger un sistema de archivos para
 el sistema operativo"
 		if [[ $? = 0 ]]; then
 			choose_fs_os
@@ -686,7 +686,7 @@ choose_home () {
 	home_dev=$(find /dev -mindepth 1 -maxdepth 1  -name "*[sh]d[a-z][1-9]*" | sort | awk '{print "\n" $0 }' | yad "$miicono" --center --list --title="Particion para /home" --text="Seleccione una particion para /home" --separator="" --column ' ' --column 'Particiones' --height=400 --width=150 --button="ACEPTAR":0)
 	if [[ -n $home_dev ]]; then
 		if ! [[ -b $home_dev ]]; then
-			"$errores" --button="Ir atras":0 --button="Salir":1 --text="    Algo esta mal. 
+			$errores --button="Ir atras":0 --button="Salir":1 --text="    Algo esta mal. 
     $home_dev no es un dispositivo de bloques. "
 			if [[ $? = 0 ]]; then
 				choose_home
@@ -695,7 +695,7 @@ choose_home () {
 			fi
 		elif
 			[[ $install_dev = $home_dev ]]; then
-			"$errores" --text="Selecciono la misma particion para la raiz y para /home. Si usted no quiere una particion separada para /home, haga clic en ACEPTAR sin seleccionar una." --button="Ir atras":0 --button="Salir":1
+			$errores --text="Selecciono la misma particion para la raiz y para /home. Si usted no quiere una particion separada para /home, haga clic en ACEPTAR sin seleccionar una." --button="Ir atras":0 --button="Salir":1
 			if [[ $? = 0 ]]; then
 				choose_home
 			else
@@ -703,7 +703,7 @@ choose_home () {
 			fi
 		elif
 			[[ $boot_dev = $home_dev ]]; then
-			"$errores" --text="Selecciono la misma particion para /home y para /boot. Intente de nuevo." --button="Ir atras":0 --button="Salir":1
+			$errores --text="Selecciono la misma particion para /home y para /boot. Intente de nuevo." --button="Ir atras":0 --button="Salir":1
 			if [[ $? = 0 ]]; then
 				choose_home
 			else
@@ -725,7 +725,7 @@ choose_fs_home () {
   "ext4")
 	fi
 	if [[ -z $fs_type_home ]]; then
-		"$errores" --button="Ir atras":0 --button="Salir":1 --text="Debe escoger un sistema de archivos para /home"
+		$errores --button="Ir atras":0 --button="Salir":1 --text="Debe escoger un sistema de archivos para /home"
 		if [[ $? = 0 ]]; then
 			choose_fs_home
 		else
@@ -1157,7 +1157,7 @@ if [[ $change_user = "yes" ]]; then
 	fi
 fi
 
-finalizando_1 | "$progreso" --progress-text="Optimizando el sistema, por favor espere..." --title="Finalizando"
+finalizando_1 | $progreso --progress-text="Optimizando el sistema, por favor espere..." --title="Finalizando"
 
 cp "$error_log" /target/var/log/
 cleanup
