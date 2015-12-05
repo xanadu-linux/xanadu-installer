@@ -2,7 +2,6 @@
 # Based on refractainstaller-8.0.3 by Dean Linkous
 LC_ALL=C
 if [[ $USER != root ]]; then
-	echo -e "\e[00;31mERROR: DEBES SER ROOT\e[00m"
 	exit 1
 fi
 error_log="/var/log/installer_error.log"
