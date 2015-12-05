@@ -1,4 +1,17 @@
-commit f6f050e633ed8a9c44ec3b2e905141ce907e0381 (HEAD, origin/master, origin/HEAD, master)
+commit 4084162fe1eb0ac8306a2bf8f8a23ab49d6d835d (HEAD, origin/master, origin/HEAD, master)
+Author: jose perez <sinfallas@gmail.com>
+Date:   Fri Dec 4 22:36:27 2015 -0430
+
+    * correccion de errores
+    * se coloca una comprobacion para seleccionar el tipo de particionamiento
+
+commit 575a10d361eb76cebbe542fed8dc7eb076e09139
+Author: jose perez <sinfallas@gmail.com>
+Date:   Fri Dec 4 21:37:35 2015 -0430
+
+    * changelog
+
+commit f6f050e633ed8a9c44ec3b2e905141ce907e0381
 Author: jose perez <sinfallas@gmail.com>
 Date:   Fri Dec 4 21:36:56 2015 -0430
 
