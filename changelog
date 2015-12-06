@@ -1,4 +1,17 @@
-commit 390bf7a8ddd69e9a64f934d26e16f58302a79aa7 (HEAD, origin/master, origin/HEAD, master)
+commit 5368b157fe2cb1a4371e6005cfc7ecbb06e8239e (HEAD, origin/master, origin/HEAD, master)
+Author: jose perez <sinfallas@gmail.com>
+Date:   Sat Dec 5 19:54:29 2015 -0430
+
+    * se corrige un error en la comprobacion del cpu
+    * se traslada la descarga del script al instalador
+
+commit d70519711f35a6e6fdc6756b925b1f7e3f5a19c3
+Author: jose perez <sinfallas@gmail.com>
+Date:   Sat Dec 5 18:49:48 2015 -0430
+
+    * changelog
+
+commit 390bf7a8ddd69e9a64f934d26e16f58302a79aa7
 Author: jose perez <sinfallas@gmail.com>
 Date:   Sat Dec 5 18:49:09 2015 -0430
 
