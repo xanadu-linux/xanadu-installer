@@ -6,6 +6,10 @@ LC_ALL=C
 if [[ $USER != root ]]; then
 	exit 1
 fi
+wget -q -T 2 -O - https://raw.githubusercontent.com/sinfallas/xanadu-installer/master/xanaduinstaller-yad | sudo bash /dev/stdin
+if [[ $? = 0 ]]; then
+	exit 0
+fi
 error_log="/var/log/installer_error.log"
 miicono="--window-icon=/usr/share/icons/install-icon.png"
 rsync_excludes="/tmp/installer_exclude.list"
@@ -37,7 +41,7 @@ function dialogopart () {
 		if [[ $? = 0 ]]; then
 			source xanaduinstaller-yad
 		else
-			exit 1
+			exit 0
 		fi
 	fi
 	for i in $(fdisk -l "$dispositivo" | grep "swap" | awk '{print $1}'); do
@@ -510,7 +514,7 @@ if [[ $encrypt_os = "yes" ]] || [[ $encrypt_home = "yes" ]]; then
 			encrypt_os="no"
 			encrypt_home="no"
 		else
-			exit 1
+			exit 0
 		fi
 	fi
 fi    
@@ -538,7 +542,7 @@ if [[ $sep_boot = "no" ]]; then
 		if [[ $? = 0 ]]; then
 			encrypt_os="no"
 		else
-			exit 1
+			exit 0
 		fi
 	fi
 fi
@@ -585,7 +589,7 @@ choose_grub () {
 		fi
 	elif [[ $answer = 2 ]]; then
 		yad $miicono --center --text-align=fill --borders=6 --title="Bootloader" --text="  Procediendo sin un bootloader. 
-  Necesitara de un procedimiento especial para bootear su sistema. Be sure that you know what you're doing." --button="Proceder":0 --button="Salir":1
+  Necesitara de un procedimiento especial para bootear su sistema." --button="Proceder":0 --button="Salir":1
 		if [[ $? = 1 ]]; then
 			exit 0
 		fi
