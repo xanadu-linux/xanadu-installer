@@ -1,4 +1,16 @@
-commit 5368b157fe2cb1a4371e6005cfc7ecbb06e8239e (HEAD, origin/master, origin/HEAD, master)
+commit 242fd0a581276d3bb120b67b0af8883dea7c1967 (HEAD, origin/master, origin/HEAD, master)
+Author: jose perez <sinfallas@gmail.com>
+Date:   Sat Dec 5 23:34:56 2015 -0430
+
+    * cambios varios
+
+commit 5b30a29bbecb7c627ee73aa3e530790e54296bd2
+Author: jose perez <sinfallas@gmail.com>
+Date:   Sat Dec 5 19:54:57 2015 -0430
+
+    * changelog
+
+commit 5368b157fe2cb1a4371e6005cfc7ecbb06e8239e
 Author: jose perez <sinfallas@gmail.com>
 Date:   Sat Dec 5 19:54:29 2015 -0430
 
