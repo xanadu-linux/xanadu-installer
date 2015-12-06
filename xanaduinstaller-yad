@@ -41,7 +41,7 @@ function dialogopart () {
 		if [[ $? = 0 ]]; then
 			source xanaduinstaller-yad
 		else
-			exit 0
+			exit 1
 		fi
 	fi
 	for i in $(fdisk -l "$dispositivo" | grep "swap" | awk '{print $1}'); do
@@ -514,7 +514,7 @@ if [[ $encrypt_os = "yes" ]] || [[ $encrypt_home = "yes" ]]; then
 			encrypt_os="no"
 			encrypt_home="no"
 		else
-			exit 0
+			exit 1
 		fi
 	fi
 fi    
@@ -542,7 +542,7 @@ if [[ $sep_boot = "no" ]]; then
 		if [[ $? = 0 ]]; then
 			encrypt_os="no"
 		else
-			exit 0
+			exit 1
 		fi
 	fi
 fi
@@ -1169,6 +1169,6 @@ ans="$?"
 case $ans in
 	0) poweroff ;;
 	1) reboot ;;
-	2) exit 0 ;;
+	2)  ;;
 esac
 exit 0
