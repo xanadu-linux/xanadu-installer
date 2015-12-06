@@ -1,4 +1,16 @@
-commit 242fd0a581276d3bb120b67b0af8883dea7c1967 (HEAD, origin/master, origin/HEAD, master)
+commit 3a2df15b6dc9762e8d8315d97e668ba6b19cade6 (HEAD, origin/master, origin/HEAD, master)
+Author: jose perez <sinfallas@gmail.com>
+Date:   Sun Dec 6 17:20:13 2015 -0430
+
+    * se completa la modificacion del instalador
+
+commit 89df1ccce47986f075ed2bbbb42367ec81a946f4
+Author: jose perez <sinfallas@gmail.com>
+Date:   Sat Dec 5 23:35:08 2015 -0430
+
+    * changelog
+
+commit 242fd0a581276d3bb120b67b0af8883dea7c1967
 Author: jose perez <sinfallas@gmail.com>
 Date:   Sat Dec 5 23:34:56 2015 -0430
 
