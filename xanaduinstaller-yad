@@ -6,6 +6,13 @@ LC_ALL=C
 if [[ $USER != root ]]; then
 	exit 1
 fi
+if ! [[ -d /lib/live/mount/rootfs ]]; then
+	exit 1
+fi
+[[ $DISPLAY ]] || { echo "No hay un servidor X corriendo. Saliendo..." ; exit 1 ; }
+trap "rm -f /run/$(basename $0).pid; exit" INT TERM EXIT
+echo "$BASHPID" > /run/"$(basename $0)".pid
+
 wget -q -T 2 -O - https://raw.githubusercontent.com/sinfallas/xanadu-installer/master/xanaduinstaller-yad | sudo bash /dev/stdin
 if [[ $? = 0 ]]; then
 	exit 0
@@ -24,13 +31,24 @@ progreso='yad --fixed --progress --pulsate --auto-close --skip-taskbar --center'
 grubversion=$(dpkg -l | grep -v bin | grep -v doc | awk '$2 ~ "grub-[pc]" {print $2}' | grep -v amd64 | grep -v i386 | grep -v common)
 memoria=$(grep "MemTotal" /proc/meminfo | awk '{print $2}')
 cpu=$(lscpu | grep "MHz" | awk '{print $3}')
+cpu2=${cpu%.*}
+if (( $memoria < 512000 )); then
+	memoria2="<span color='#ff0000'>$memoria</span>"
+else
+	memoria2="<span color='#00b300'>$memoria</span>"
+fi
+if (( $cpu2 < 1000 )); then
+	cpu3="<span color='#ff0000'>$cpu2</span>"
+else
+	cpu3="<span color='#00b300'>$cpu2</span>"
+fi
 rm -f "$parti"
 exec 2>"$error_log"
 
 function advert () {
 	yad --skip-taskbar --button="Aceptar":0 --button="Salir":1 --fixed --center --text-align=fill --borders=6 --title="ADVERTENCIA" --text="Esta opción eliminara toda la informacion del disco y no podra revertirse."
 	if [[ $? != 0 ]]; then
-		source xanaduinstaller-yad
+		source $(basename $0)
 	fi
 }
 
@@ -39,7 +57,7 @@ function dialogopart () {
 	if [[ -z "$dispositivo" ]]; then
 		$errores --button="Ir atras":0 --button="Salir":1 --text="No selecciono nada. Debe escoger un disco."
 		if [[ $? = 0 ]]; then
-			source xanaduinstaller-yad
+			source $(basename $0)
 		else
 			exit 1
 		fi
@@ -112,7 +130,7 @@ function milvm () {
 			milvm3 | $progreso --progress-text="Creando particiones, por favor espere..." --title="Particionando"
 		fi
 	else
-		source xanaduinstaller-yad
+		source $(basename $0)
 	fi
 }
 
@@ -308,7 +326,7 @@ function preinstall () {
 	case $ans in
 		0) miparticion ; check_exit ;;
 		1) milvm ; check_exit ;;
-		2) source xanaduinstaller-yad ;;
+		2) source $(basename $0) ;;
 		3) exit 0 ;;
 	esac
 }
@@ -394,24 +412,17 @@ cat > "$home_boot_excludes" <<EOF
 EOF
 chmod 666 "$home_boot_excludes"
 
-[[ $DISPLAY ]] || { echo "No hay un servidor X corriendo. Saliendo..." ; exit 1 ; }
+yad $miicono --center --text-align=fill --borders=6 --title="Instalar Xanadu GNU/Linux" --button="Instalacion simple":0 --button="Instalacion experta":1 --button="Salir":2 --text="
 
-if ! [[ -d /lib/live/mount/rootfs ]]; then
-	live_session_warning="ALERTA: No se esta ejecutando desde un Live-CD/USB o esta usando una configuracion no soportada"
-fi
+ Esta aplicacion instalara Xanadu GNU/Linux en su equipo.
 
-yad $miicono --center --text-align=fill --borders=6 --title="Instalar Xanadu GNU/Linux" --button="Instalacion simple":0 --button="Instalacion experta":1 --button="Salir":2 --text="$live_session_warning
+ Cantidad minima de RAM:	512000 kB.
+ Cantidad recomendada de RAM:	1073740 kB.
+ Cantidad detectada de RAM:	$memoria2 kB.
 
- Esta aplicacion instalara Xanadu GNU/Linux en su disco duro.
-
- Cantidad de RAM minima:	512000 kB.
- Cantidad de RAM recomendada:	1073740 kB.
- Cantidad de RAM detectada:	$memoria kB.
-
- Velocidad del CPU minima:	1000.000 MHz.
- Velocidad del CPU recomendada:	1500.000 MHz.
- Velocidad del CPU detectada:	$cpu MHz.
-"
+ Velocidad minima del CPU:	1000 MHz.
+ Velocidad recomendada del CPU:	1500 MHz.
+ Velocidad detectada del CPU:	$cpu3 MHz."
 mode="$?"
 case $mode in
 	0) install="simple" ;;
@@ -1171,4 +1182,6 @@ case $ans in
 	1) reboot ;;
 	2)  ;;
 esac
+rm -f /run/$(basename $0).pid
+trap - INT TERM EXIT
 exit 0
