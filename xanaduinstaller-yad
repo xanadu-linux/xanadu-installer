@@ -181,6 +181,7 @@ function finalizando_1 () {
 	echo "proc /proc proc defaults,hidepid=2 0 0" >> /target/etc/fstab
 	echo "tmpfs /run tmpfs rw,nosuid,async,noexec,nodev,noatime,mode=755 0 0" >> /target/etc/fstab
 	echo "tmpfs /tmp tmpfs noatime,async,nosuid,noexec,nodev,rw 0 0" >> /target/etc/fstab
+	echo "sshd : ALL" >> /target/etc/hosts.allow
 	echo 'DPkg::Post-Invoke {"echo Ejecutando prelink, espere...;/etc/cron.daily/prelink";}' > /target/etc/apt/apt.conf
 	if [[ $(cat /target/etc/hostname) = xanadu ]]; then
 		echo xanadu-$(date | md5sum | cut -c 1-10) > /target/etc/hostname
