@@ -1,8 +1,11 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # Made by Sinfallas <sinfallas@yahoo.com>
 # Licence: GPL-2
 # Based on refractainstaller-8.0.3 by Dean Linkous
+set -eu
+set -o pipefail
 LC_ALL=C
+
 if [[ $USER != root ]]; then
 	exit 1
 fi
