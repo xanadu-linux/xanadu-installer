@@ -6,7 +6,7 @@ set -eu
 set -o pipefail
 LC_ALL=C
 
-if [[ $USER != root ]]; then
+if [[ "$EUID" != "0" ]]; then
 	exit 1
 fi
 if ! [[ -d /lib/live/mount/rootfs ]]; then
