@@ -1,11 +1,10 @@
-#!/usr/bin/env bash
+#!/bin/bash
 # Made by Sinfallas <sinfallas@yahoo.com>
 # Licence: GPL-2
 # Based on refractainstaller-8.0.3 by Dean Linkous
-set -eu
 LC_ALL=C
-
 if [[ "$EUID" != "0" ]]; then
+	yad --skip-taskbar --button="ACEPTAR":1 --fixed --center --text-align=fill --borders=6 --timeout=3 --title="ERROR" --text="ERROR: Debes ser root."
 	exit 1
 fi
 if ! [[ -d /lib/live/mount/rootfs ]]; then
