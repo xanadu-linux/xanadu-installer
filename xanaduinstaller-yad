@@ -3,7 +3,6 @@
 # Licence: GPL-2
 # Based on refractainstaller-8.0.3 by Dean Linkous
 set -eu
-set -o pipefail
 LC_ALL=C
 
 if [[ "$EUID" != "0" ]]; then
