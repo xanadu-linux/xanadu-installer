@@ -23,10 +23,16 @@ miicono="--window-icon=/usr/share/icons/install-icon.png"
 rsync_excludes="/tmp/installer_exclude.list"
 home_boot_excludes="/tmp/home_boot_exclude.list"
 parti="/tmp/particionador"
+xfspath="/target/etc/sysctl.d/12-xfs.conf"
+x11path="/target/etc/X11/xorg.conf"
+fspath="/target/etc/fstab"
+light="/target/etc/lightdm/lightdm.conf"
+greeter="/target/etc/lightdm/lightdm-gtk-greeter.conf"
 swapfile_blocksize="1024"
 swapfile_count="262144"
 pmount_fixed="no"
 fs_type_boot="ext4"
+advertencia='yad --skip-taskbar --fixed --center --text-align=fill --borders=6 --button="Aceptar":0 --button="Salir":1 --title="Advertencia"'
 errores='yad --skip-taskbar --fixed --center --title="Error" --window-icon=error --text-align=fill --borders=6'
 progreso='yad --fixed --progress --pulsate --auto-close --skip-taskbar --center'
 grubversion=$(dpkg -l | grep -v bin | grep -v doc | awk '$2 ~ "grub-[pc]" {print $2}' | grep -v amd64 | grep -v i386 | grep -v common)
@@ -47,7 +53,7 @@ rm -f "$parti"
 exec 2>"$error_log"
 
 function advert () {
-	yad --skip-taskbar --button="Aceptar":0 --button="Salir":1 --fixed --center --text-align=fill --borders=6 --title="ADVERTENCIA" --text="Esta opción eliminara toda la informacion del disco y no podra revertirse."
+	$advertencia --text="Esta opción eliminara toda la informacion del disco y no podra revertirse."
 	if [[ $? != 0 ]]; then
 		source $(basename $0)
 	fi
@@ -123,15 +129,15 @@ function milvm3 () {
 
 function milvm () {
 	advert
-	if yad --skip-taskbar --fixed --center --text-align=fill --borders=6 --title="ADVERTENCIA" --text="Se recomienda utilizar un sistema de energia de respaldo para utilizar LVM"; then	
+	$advertencia --text="Se recomienda utilizar un sistema de energia de respaldo para utilizar LVM"
+	if [[ $? != 0 ]]; then
+		exit 1
+	fi
 	dialogopart
-		if [[ $(parted -s "$dispositivo" -- print | grep "Partition" | awk '{print $3}') = msdos ]]; then
-			milvm2 | $progreso --progress-text="Creando particiones, por favor espere..." --title="Particionando"
-		else
-			milvm3 | $progreso --progress-text="Creando particiones, por favor espere..." --title="Particionando"
-		fi
+	if [[ $(parted -s "$dispositivo" -- print | grep "Partition" | awk '{print $3}') = msdos ]]; then
+		milvm2 | $progreso --progress-text="Creando particiones, por favor espere..." --title="Particionando"
 	else
-		source $(basename $0)
+		milvm3 | $progreso --progress-text="Creando particiones, por favor espere..." --title="Particionando"
 	fi
 }
 
@@ -149,7 +155,7 @@ function miparticion () {
 }
 
 function finalizando_1 () {
-	rmdir /live-build/
+	rmdir /target/live-build/
 	rm -f /target/etc/apt/preferences.d/exclude.pref
 	rm -f /target/etc/apt/preferences		
 	rm -f /target/etc/inittab
@@ -162,26 +168,26 @@ function finalizando_1 () {
 	find /target/var/log/ -type f -exec rm -f {} \;
 	if ! [[ -z $(fdisk -l | grep "swap" | awk '{print $1}') ]]; then
 		rm -f /target/swapfile
-		sed -i 's_/swapfile_#/swapfile_g' /target/etc/fstab
+		sed -i 's_/swapfile_#/swapfile_g' $fspath
 	fi
-	sed -i 's_autologin-user=user_#autologin-user=user_g' /target/etc/lightdm/lightdm.conf
-	sed -i 's_autologin-user-timeout=0_#autologin-user-timeout=0_g' /target/etc/lightdm/lightdm.conf
-	sed -i 's_#greeter-hide-users=false_greeter-hide-users=false_g' /target/etc/lightdm/lightdm.conf
-	sed -i 's_#session-cleanup-script=_session-cleanup-script=/usr/bin/fin_g' /target/etc/lightdm/lightdm.conf
-	sed -i 's_show-indicators=~language;~session;~power_show-indicators=~session;~power_g' /target/etc/lightdm/lightdm-gtk-greeter.conf
-	sed -i 's_#show-clock=_show-clock=true_g' /target/etc/lightdm/lightdm-gtk-greeter.conf
-	sed -i 's_#clock-format=_clock-format=%a, %d %b %I:%M_g' /target/etc/lightdm/lightdm-gtk-greeter.conf
+	sed -i 's_autologin-user=user_#autologin-user=user_g' $light
+	sed -i 's_autologin-user-timeout=0_#autologin-user-timeout=0_g' $light
+	sed -i 's_#greeter-hide-users=false_greeter-hide-users=false_g' $light
+	sed -i 's_#session-cleanup-script=_session-cleanup-script=/usr/bin/fin_g' $light
+	sed -i 's_show-indicators=~language;~session;~power_show-indicators=~session;~power_g' $greeter
+	sed -i 's_#show-clock=_show-clock=true_g' $greeter
+	sed -i 's_#clock-format=_clock-format=%a, %d %b %I:%M_g' $greeter
 	sed -i 's_umask 022_umask 027_g' /target/etc/init.d/rc
 	sed -i 's_UMASK		022_UMASK	027_g' /target/etc/login.defs
 	sed -i 's/GRUB_CMDLINE_LINUX_DEFAULT="quiet"/GRUB_CMDLINE_LINUX_DEFAULT="acpi_osi=Linux swapaccount=1 cgroup_enable=memory security=apparmor apparmor=1 panic=10 quiet"/g' /target/etc/default/grub
 	sed -i 's_/bin/bash_/usr/bin/fish_g' /target/etc/passwd
-	echo "default-user-image=/usr/share/images/desktop-base/logo1.png" >> /target/etc/lightdm/lightdm-gtk-greeter.conf
+	echo "default-user-image=/usr/share/images/desktop-base/logo1.png" >> $greeter
 	echo "user ALL=(ALL) ALL" > /target/etc/sudoers.d/live
 	echo "umask 027" >> /target/etc/profile
 	echo "auth required pam_succeed_if.so user != root quiet" >> /target/etc/pam.d/lightdm
-	echo "proc /proc proc defaults,hidepid=2 0 0" >> /target/etc/fstab
-	echo "tmpfs /run tmpfs rw,nosuid,async,noexec,nodev,noatime,mode=755 0 0" >> /target/etc/fstab
-	echo "tmpfs /tmp tmpfs noatime,async,nosuid,noexec,nodev,rw 0 0" >> /target/etc/fstab
+	echo "proc /proc proc defaults,hidepid=2 0 0" >> $fspath
+	echo "tmpfs /run tmpfs rw,nosuid,async,noexec,nodev,noatime,mode=755 0 0" >> $fspath
+	echo "tmpfs /tmp tmpfs noatime,async,nosuid,noexec,nodev,rw 0 0" >> $fspath
 	echo "sshd : ALL" >> /target/etc/hosts.allow
 	echo 'DPkg::Post-Invoke {"echo Ejecutando prelink, espere...;/etc/cron.daily/prelink";}' > /target/etc/apt/apt.conf
 	if [[ $(cat /target/etc/hostname) = xanadu ]]; then
@@ -189,24 +195,69 @@ function finalizando_1 () {
 		sed -i 's_xanadu_'$(cat /target/etc/hostname)'_g' /target/etc/hosts
 	fi
 	if [[ -n "$(lspci | grep -E 'VGA|Display' | head -n1 | cut -d ':' -f3 | grep -F 'Intel')" ]]; then
-		echo 'Section "Device"' > /target/etc/X11/xorg.conf
-		echo ' Identifier "intel"' >> /target/etc/X11/xorg.conf
-		echo ' Driver "intel"' >> /target/etc/X11/xorg.conf
-		echo ' BusID  "PCI:0:2:0"' >> /target/etc/X11/xorg.conf
-		echo ' Option "AccelMethod" "SNA"' >> /target/etc/X11/xorg.conf
-		echo ' Option "SwapbuffersWait" "false"' >> /target/etc/X11/xorg.conf
-		echo ' Option "Tiling" "true"' >> /target/etc/X11/xorg.conf
-		echo ' Option "BackingStore" "True"' >> /target/etc/X11/xorg.conf
-		echo ' Option "XvMC" "on"' >> /target/etc/X11/xorg.conf
-		echo ' Option "TripleBuffer" "true"' >> /target/etc/X11/xorg.conf
-		echo ' Option "DRI" "true"' >> /target/etc/X11/xorg.conf
-		echo 'EndSection' >> /target/etc/X11/xorg.conf
+		echo 'Section "Device"' > $x11path
+		echo ' Identifier "intel"' >> $x11path
+		echo ' Driver "intel"' >> $x11path
+		echo ' BusID  "PCI:0:2:0"' >> $x11path
+		echo ' Option "AccelMethod" "SNA"' >> $x11path
+		echo ' Option "SwapbuffersWait" "false"' >> $x11path
+		echo ' Option "Tiling" "true"' >> $x11path
+		echo ' Option "BackingStore" "True"' >> $x11path
+		echo ' Option "XvMC" "on"' >> $x11path
+		echo ' Option "TripleBuffer" "true"' >> $x11path
+		echo ' Option "DRI" "true"' >> $x11path
+		echo ' Option "EXAOptimizeMigration" "true"' >> $x11path
+		echo ' Option "MigrationHeuristic" "greedy"' >> $x11path
+		echo 'EndSection' >> $x11path
 	fi
-	chmod 600 /target/etc/sudoers
-	chmod 644 /target/usr/bin/lxpolkit
-	chmod -R g=-r-x,o=-r-x /home/user/
+	if [[ $fs_type_os = xfs ]]; then
+		echo "fs.xfs.age_buffer_centisecs = 1500" > $xfspath
+		echo "fs.xfs.error_level = 3" >> $xfspath
+		echo "fs.xfs.filestream_centisecs = 3000" >> $xfspath
+		echo "fs.xfs.inherit_noatime = 1" >> $xfspath
+		echo "fs.xfs.inherit_nodefrag = 1" >> $xfspath
+		echo "fs.xfs.inherit_nodump = 1" >> $xfspath
+		echo "fs.xfs.inherit_nosymlinks = 0" >> $xfspath
+		echo "fs.xfs.inherit_sync = 1" >> $xfspath
+		echo "fs.xfs.irix_sgid_inherit = 0" >> $xfspath
+		echo "fs.xfs.irix_symlink_mode = 0" >> $xfspath
+		echo "fs.xfs.panic_mask = 0" >> $xfspath
+		echo "fs.xfs.rotorstep = 1" >> $xfspath
+		echo "fs.xfs.speculative_prealloc_lifetime = 300" >> $xfspath
+		echo "fs.xfs.stats_clear = 0" >> $xfspath
+		echo "fs.xfs.xfsbufd_centisecs = 100" >> $xfspath
+		echo "fs.xfs.xfssyncd_centisecs = 3000" >> $xfspath
+	fi
+	if (( $memoria > 4096000 )); then
+		echo "tmpfs /var/cache/apt/archives tmpfs noatime,async,nodev 0 0" >> $fspath
+		yad --skip-taskbar --fixed --center --text-align=fill --borders=6 --button="Aceptar":0 --button="Cancelar":1 --title="Finalizando" --text="¿Desea activar fail2ban, psad y aide? (No se recomienda si tiene menos de 4 GB de RAM)"
+		if [[ $? = 0 ]]; then
+			chroot /target systemctl enable ntp
+			chroot /target systemctl enable fail2ban
+			chroot /target systemctl enable psad
+			chroot /target aideinit -y -f
+			mv -f -v /target/var/lib/aide/aide.db.new /target/var/lib/aide/aide.db
+		else
+			chroot /target systemctl disable ntp
+			chroot /target systemctl disable fail2ban
+			chroot /target systemctl disable psad
+		fi
+	fi
+	chmod 0600 /target/etc/sudoers
+	chmod 0644 /target/usr/bin/lxpolkit
+	chmod -R 0700 /target/home/user/
+	chroot /target chmod -s /usr/bin/passwd
+	chroot /target chmod -s /usr/bin/wall
+	chroot /target chmod -s /bin/su
 	chroot /target groupadd -r fuse
+	chroot /target adduser user sambashare
 	chroot /target update-grub2
+	chroot /target iucode_tool --scan-system
+	chroot /target update-initramfs -u
+	chroot /target chage -M 365 root
+	chroot /target chage -M 183 user
+	chroot /target yes "" | sensors-detect
+	chroot /target apt -y remove xanadu-installer sysvinit xanadu-grubdoctor
 	chroot /target systemctl enable systemd-readahead-collect 
 	chroot /target systemctl enable systemd-readahead-replay
 	chroot /target systemctl enable swapspace
@@ -217,23 +268,6 @@ function finalizando_1 () {
 	chroot /target systemctl disable privoxy
 	chroot /target systemctl disable ssh
 	chroot /target systemctl disable tor
-	chroot /target iucode_tool --scan-system
-	chroot /target update-initramfs -u
-	chroot /target chage -M 365 root
-	chroot /target yes "" | sensors-detect
-	chroot /target apt -y remove xanadu-installer sysvinit xanadu-grubdoctor
-	if (( $memoria > 4096000 )); then
-		echo "tmpfs /var/cache/apt/archives tmpfs noatime,async,nodev 0 0" >> /etc/fstab
-		if yad --skip-taskbar --fixed --center --text-align=fill --borders=6 --title="Finalizando" --text="¿Desea activar fail2ban y psad?"; then
-			chroot /target systemctl enable ntp
-			chroot /target systemctl enable fail2ban
-			chroot /target systemctl enable psad
-		else
-			chroot /target systemctl disable ntp
-			chroot /target systemctl disable fail2ban
-			chroot /target systemctl disable psad
-		fi
-	fi
 }
 
 function loctimezone () {
@@ -990,9 +1024,13 @@ if [[ $encrypt_os != "yes" ]]; then
 fi
 
 if [[ $fs_type_os = ext4 ]]; then
-	echo -e "$install_part\t/\t$fs_type_os\tdefaults,noatime,nodelalloc,commit=60,inode_readahead_blks=64,discard,errors=remount-ro\t0\t1" > /target/etc/fstab
+	echo -e "$install_part\t/\t$fs_type_os\tdefaults,noatime,nodelalloc,commit=60,inode_readahead_blks=64,discard,errors=remount-ro\t0\t1" > $fspath
 else
-	echo -e "$install_part\t/\t$fs_type_os\tdefaults\t0\t1" > /target/etc/fstab
+	if [[ $fs_type_os = xfs ]]; then
+		echo -e "$install_part\t/\t$fs_type_os\tdefaults,rw,noatime,relatime,attr2,nobarrier,logbufs=8,largeio,inode64\t0\t1" > $fspath
+	else
+		echo -e "$install_part\t/\t$fs_type_os\tdefaults\t0\t1" > $fspath
+	fi
 fi
 check_exit
 
@@ -1018,9 +1056,13 @@ if ! [[ -z $home_dev ]]; then
 		fi
 	fi
 	if [[ $fs_type_home = ext4 ]]; then
-		echo -e "$home_part\t/home\t$fs_type_home\tdefaults,noatime,nodelalloc,commit=60,inode_readahead_blks=64,discard,errors=remount-ro\t0\t3" >> /target/etc/fstab
+		echo -e "$home_part\t/home\t$fs_type_home\tdefaults,noatime,nodelalloc,commit=60,inode_readahead_blks=64,discard,errors=remount-ro\t0\t3" >> $fspath
 	else
-		echo -e "$home_part\t/home\t$fs_type_home\tdefaults\t0\t3" >> /target/etc/fstab
+		if [[ $fs_type_home = xfs ]]; then
+			echo -e "$home_part\t/home\t$fs_type_home\tdefaults,rw,noatime,relatime,attr2,nobarrier,logbufs=8,largeio,inode64\t0\t3" >> $fspath
+		else
+			echo -e "$home_part\t/home\t$fs_type_home\tdefaults\t0\t3" >> $fspath
+		fi
 	fi
 	check_exit
 fi
@@ -1045,9 +1087,9 @@ if [[ -n $boot_dev ]]; then
 		boot_part="$boot_dev"
 	fi
 	if [[ $fs_type_boot = ext4 ]]; then
-		echo -e "$boot_part\t/boot\t$fs_type_boot\tdefaults,noatime,errors=remount-ro\t0\t2" >> /target/etc/fstab
+		echo -e "$boot_part\t/boot\t$fs_type_boot\tdefaults,noatime,errors=remount-ro\t0\t2" >> $fspath
 	else
-		echo -e "$boot_part\t/boot\t$fs_type_boot\tdefaults\t0\t2" >> /target/etc/fstab
+		echo -e "$boot_part\t/boot\t$fs_type_boot\tdefaults\t0\t2" >> $fspath
 	fi
 	check_exit
 fi
