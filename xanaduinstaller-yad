@@ -11,7 +11,84 @@ if ! [[ -d /lib/live/mount/rootfs ]]; then
 	exit 1
 fi
 [[ $DISPLAY ]] || { echo "No hay un servidor X corriendo. Saliendo..." ; exit 1 ; }
-trap "rm -f /run/$(basename $0).pid; exit" INT TERM EXIT
+
+function cleanup () {
+echo -e "\n @@@ Limpiando...\n" >> "$error_log"
+if $(df | grep -q /target/proc/); then
+	umount /target/proc/
+fi
+
+if $(df | grep -q /target/dev/); then
+	umount /target/dev/
+fi
+
+if $(df | grep -q /target/sys/); then
+	umount /target/sys/
+fi
+
+if $(df | grep -q $boot_dev); then
+	umount -l $boot_dev
+fi
+
+if $(df | grep -q /target_boot); then
+	umount -l /target_boot/
+fi
+
+if $(df | grep -q /target_home); then
+	umount -l /target_home/
+fi
+
+if $(df | grep -q $home_dev); then
+	umount $home_dev
+fi
+
+if $(df | grep -q "\/dev\/mapper\/home_fs"); then
+	umount /dev/mapper/home_fs
+fi
+
+if [[ -h /dev/mapper/home_fs ]]; then
+	cryptsetup luksClose home_fs
+fi
+
+if $(df | grep -q /target); then
+	umount -l /target/
+fi
+
+if $(df | grep -q $install_dev); then
+	umount $install_dev
+fi    
+
+if $(df | grep "\/dev\/mapper\/root_fs"); then
+	umount /dev/mapper/root_fs
+fi
+
+if [[ -h /dev/mapper/root_fs ]]; then
+	cryptsetup luksClose /dev/mapper/root_fs
+fi
+
+if [[ -d /target ]]; then
+	rm -rf /target
+fi
+
+if [[ -d /target_home ]]; then
+	rm -rf /target_home
+fi
+
+if [[ -d /target_boot ]]; then
+	rm -rf /target_boot
+fi
+
+rm -rf /target/tmp/*
+rm -rf /target/var/tmp/*
+rm -rf /target/var/cache/polipo/*
+rm -rf /target/root/.local/share/Trash/*
+rm -rf /target/home/*/.local/share/Trash/*
+rm -rf /target/home/*/.mozilla/firefox/*/*Cache*
+rm -rf /tmp/*
+rm -rf /var/tmp/*
+}
+
+trap cleanup 0 1 2 3 15
 echo "$BASHPID" > /run/"$(basename $0)".pid
 
 wget -q -T 2 -O - https://raw.githubusercontent.com/sinfallas/xanadu-installer/master/xanaduinstaller-yad | sudo bash /dev/stdin
@@ -277,73 +354,6 @@ function loctimezone () {
 	dpkg-reconfigure tzdata
 	#dpkg-reconfigure locales
 	#dpkg-reconfigure keyboard-configuration
-}
-
-function cleanup () {
-echo -e "\n @@@ Limpiando...\n" >> "$error_log"
-if $(df | grep -q /target/proc/); then
-	umount /target/proc/
-fi
-
-if $(df | grep -q /target/dev/); then
-	umount /target/dev/
-fi
-
-if $(df | grep -q /target/sys/); then
-	umount /target/sys/
-fi
-
-if $(df | grep -q $boot_dev); then
-	umount -l $boot_dev
-fi
-
-if $(df | grep -q /target_boot); then
-	umount -l /target_boot/
-fi
-
-if $(df | grep -q /target_home); then
-	umount -l /target_home/
-fi
-
-if $(df | grep -q $home_dev); then
-	umount $home_dev
-fi
-
-if $(df | grep -q "\/dev\/mapper\/home_fs"); then
-	umount /dev/mapper/home_fs
-fi
-
-if [[ -h /dev/mapper/home_fs ]]; then
-	cryptsetup luksClose home_fs
-fi
-
-if $(df | grep -q /target); then
-	umount -l /target/
-fi
-
-if $(df | grep -q $install_dev); then
-	umount $install_dev
-fi    
-
-if $(df | grep "\/dev\/mapper\/root_fs"); then
-	umount /dev/mapper/root_fs
-fi
-
-if [[ -h /dev/mapper/root_fs ]]; then
-	cryptsetup luksClose /dev/mapper/root_fs
-fi
-
-if [[ -d /target ]]; then
-	rm -rf /target
-fi
-
-if [[ -d /target_home ]]; then
-	rm -rf /target_home
-fi
-
-if [[ -d /target_boot ]]; then
-	rm -rf /target_boot
-fi
 }
 
 function check_exit () {
@@ -677,13 +687,13 @@ choose_root () {
 		else
 			exit 1
 		fi
-#elif ! [[ -b $install_dev ]]; then
-#    $errores --button="Ir atras":0 --button="Salir":1 --text="    Algo esta mal. Tal vez usted marco mas de una casilla. Usted dijo que quiere instalar el sistema en: $install_dev"
-#        if [[ $? = 0 ]]; then
-#            choose_root
-#        else
-#            exit 1
-#        fi
+#	elif ! [[ -b $install_dev ]]; then
+#    		$errores --button="Ir atras":0 --button="Salir":1 --text="    Algo esta mal. Tal vez usted marco mas de una casilla. Usted dijo que quiere instalar el sistema en: $install_dev"
+#        	if [[ $? = 0 ]]; then
+#            		choose_root
+#        	else
+#            		exit 1
+#        	fi
 	elif [[ $install_dev = $boot_dev ]]; then
 		$errores --text="Selecciono la misma particion para la raiz y para /boot. Intente de nuevo." --button="Aceptar":0
 		choose_root
@@ -1228,5 +1238,4 @@ case $ans in
 	2)  ;;
 esac
 rm -f /run/$(basename $0).pid
-trap - INT TERM EXIT
 exit 0
