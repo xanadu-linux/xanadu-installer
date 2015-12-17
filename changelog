@@ -1,4 +1,16 @@
-commit e62c690d930c65461e4162dd7153437ad856bd03 (HEAD, origin/master, origin/HEAD, master)
+commit 0b97ccab4a0c8ae04d414b27ba6f55ec61c22509 (HEAD, origin/master, origin/HEAD, master)
+Author: jose perez <sinfallas@gmail.com>
+Date:   Wed Dec 16 23:22:21 2015 -0430
+
+    * se amplia la lista de excluidos de rsync
+
+commit ab12df9e2e953ac2b671891b716ad9e1d1908ddd
+Author: jose perez <sinfallas@gmail.com>
+Date:   Wed Dec 16 23:06:56 2015 -0430
+
+    * changelog
+
+commit e62c690d930c65461e4162dd7153437ad856bd03
 Author: jose perez <sinfallas@gmail.com>
 Date:   Wed Dec 16 22:59:57 2015 -0430
 
