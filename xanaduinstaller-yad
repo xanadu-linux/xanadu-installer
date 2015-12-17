@@ -4,7 +4,7 @@
 # Based on refractainstaller-8.0.3 by Dean Linkous
 LC_ALL=C
 if [[ "$EUID" != "0" ]]; then
-	yad --skip-taskbar --button="ACEPTAR":1 --fixed --center --text-align=fill --borders=6 --timeout=3 --title="ERROR" --text="ERROR: Debes ser root."
+	yad --window-icon=/usr/share/icons/install-icon.png --skip-taskbar --button="ACEPTAR":1 --fixed --center --text-align=fill --borders=6 --timeout=3 --title="ERROR" --text="ERROR: Debes ser root."
 	exit 1
 fi
 if ! [[ -d /lib/live/mount/rootfs ]]; then
@@ -32,6 +32,7 @@ swapfile_blocksize="1024"
 swapfile_count="262144"
 pmount_fixed="no"
 fs_type_boot="ext4"
+msgprt='--progress-text="Creando particiones, por favor espere..." --title="Particionando"'
 advertencia='yad --skip-taskbar --fixed --center --text-align=fill --borders=6 --button="Aceptar":0 --button="Salir":1 --title="Advertencia"'
 errores='yad --skip-taskbar --fixed --center --title="Error" --window-icon=error --text-align=fill --borders=6'
 progreso='yad --fixed --progress --pulsate --auto-close --skip-taskbar --center'
@@ -135,9 +136,9 @@ function milvm () {
 	fi
 	dialogopart
 	if [[ $(parted -s "$dispositivo" -- print | grep "Partition" | awk '{print $3}') = msdos ]]; then
-		milvm2 | $progreso --progress-text="Creando particiones, por favor espere..." --title="Particionando"
+		milvm2 | $progreso $msgprt
 	else
-		milvm3 | $progreso --progress-text="Creando particiones, por favor espere..." --title="Particionando"
+		milvm3 | $progreso $msgprt
 	fi
 }
 
@@ -151,7 +152,7 @@ function miparticion2 () {
 function miparticion () {
 	advert
 	dialogopart
-	miparticion2 | $progreso --progress-text="Creando particiones, por favor espere..." --title="Particionando"
+	miparticion2 | $progreso $msgprt
 }
 
 function finalizando_1 () {
@@ -251,13 +252,12 @@ function finalizando_1 () {
 	chroot /target chmod -s /bin/su
 	chroot /target groupadd -r fuse
 	chroot /target adduser user sambashare
-	chroot /target update-grub2
-	chroot /target iucode_tool --scan-system
-	chroot /target update-initramfs -u
 	chroot /target chage -M 365 root
 	chroot /target chage -M 183 user
 	chroot /target yes "" | sensors-detect
-	chroot /target apt -y remove xanadu-installer sysvinit xanadu-grubdoctor
+	chroot /target iucode_tool --scan-system
+	chroot /target update-initramfs -u
+	chroot /target update-grub2
 	chroot /target systemctl enable systemd-readahead-collect 
 	chroot /target systemctl enable systemd-readahead-replay
 	chroot /target systemctl enable swapspace
@@ -268,6 +268,7 @@ function finalizando_1 () {
 	chroot /target systemctl disable privoxy
 	chroot /target systemctl disable ssh
 	chroot /target systemctl disable tor
+	chroot /target apt -y remove xanadu-installer sysvinit xanadu-grubdoctor
 }
 
 function loctimezone () {
