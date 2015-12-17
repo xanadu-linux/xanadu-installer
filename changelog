@@ -1,4 +1,24 @@
-commit 0b97ccab4a0c8ae04d414b27ba6f55ec61c22509 (HEAD, origin/master, origin/HEAD, master)
+commit 65be8a2b927b4001246f30509334cf6810cbb41a (HEAD, origin/master, origin/HEAD, master)
+Author: jose perez <sinfallas@gmail.com>
+Date:   Thu Dec 17 00:28:08 2015 -0430
+
+    * bugfix
+    * se modifica la implementacion de trap
+
+commit 666e17733b1a59e547ad8e7dc81ffdde587cd50f
+Author: jose perez <sinfallas@gmail.com>
+Date:   Wed Dec 16 23:48:52 2015 -0430
+
+    * bugfix
+    * reduccion de tamaño
+
+commit 9f2254e4d95404d40bbc78c4cdcd1b5c3dd2fe63
+Author: jose perez <sinfallas@gmail.com>
+Date:   Wed Dec 16 23:22:55 2015 -0430
+
+    * changelog
+
+commit 0b97ccab4a0c8ae04d414b27ba6f55ec61c22509
 Author: jose perez <sinfallas@gmail.com>
 Date:   Wed Dec 16 23:22:21 2015 -0430
 
