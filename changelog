@@ -1,4 +1,17 @@
-commit 7624e944a6040bfcc7c641d464dbfd4dd054ac26 (HEAD, origin/master, origin/HEAD, master)
+commit 03c607ba5bf0eacf448d58a9ab5391c1e969960a (HEAD, origin/master, origin/HEAD, master)
+Author: jose perez <sinfallas@gmail.com>
+Date:   Thu Dec 17 22:43:56 2015 -0430
+
+    * se agregan optimizaciones para xfs
+    * se activa trim y elevator=noop en caso de ser necesario
+
+commit ef9a0e77ab779836ee1d04018129ac7e764a9205
+Author: jose perez <sinfallas@gmail.com>
+Date:   Thu Dec 17 20:27:01 2015 -0430
+
+    * changelog
+
+commit 7624e944a6040bfcc7c641d464dbfd4dd054ac26
 Author: jose perez <sinfallas@gmail.com>
 Date:   Thu Dec 17 00:28:46 2015 -0430
 
