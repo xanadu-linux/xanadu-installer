@@ -244,10 +244,6 @@ function finalizando_1 () {
 	rm -rf /target/home/*/.local/share/Trash/*
 	rm -rf /target/home/*/.mozilla/firefox/*/*Cache*
 	find /target/var/log/ -type f -exec rm -f {} \;
-	if ! [[ -z $(fdisk -l | grep "swap" | awk '{print $1}') ]]; then
-		rm -f /target/swapfile
-		sed -i 's_/swapfile_#/swapfile_g' $fspath
-	fi
 	sed -i 's_autologin-user=user_#autologin-user=user_g' $light
 	sed -i 's_autologin-user-timeout=0_#autologin-user-timeout=0_g' $light
 	sed -i 's_#greeter-hide-users=false_greeter-hide-users=false_g' $light
@@ -268,7 +264,11 @@ function finalizando_1 () {
 	echo "tmpfs /tmp tmpfs noatime,async,nosuid,noexec,nodev,rw 0 0" >> $fspath
 	echo "sshd : ALL" >> /target/etc/hosts.allow
 	echo 'DPkg::Post-Invoke {"echo Ejecutando prelink, espere...;/etc/cron.daily/prelink";}' > /target/etc/apt/apt.conf
-	if [[ $(cat /target/etc/hostname) = xanadu ]]; then
+	if ! [[ -z $(fdisk -l | grep "swap" | awk '{print $1}') ]]; then
+		rm -f /target/swapfile
+		sed -i 's_/swapfile_#/swapfile_g' $fspath
+	fi
+	if [[ $(cat /target/etc/hostname) = "xanadu" ]]; then
 		echo xanadu-$(date | md5sum | cut -c 1-10) > /target/etc/hostname
 		sed -i 's_xanadu_'$(cat /target/etc/hostname)'_g' /target/etc/hosts
 	fi
@@ -288,7 +288,7 @@ function finalizando_1 () {
 		echo ' Option "MigrationHeuristic" "greedy"' >> $x11path
 		echo 'EndSection' >> $x11path
 	fi
-	if [[ $fs_type_os = xfs ]]; then
+	if [[ $fs_type_os = "xfs" ]]; then
 		echo "fs.xfs.age_buffer_centisecs = 1500" > $xfspath
 		echo "fs.xfs.error_level = 3" >> $xfspath
 		echo "fs.xfs.filestream_centisecs = 3000" >> $xfspath
@@ -322,7 +322,7 @@ function finalizando_1 () {
 		fi
 	fi
 	if [[ $(cat /sys/block/$migrub/queue/rotational) = "0" ]]; then
-		if [[ -z $(hdparm -I $migrub | grep "TRIM supported") ]]; then
+		if ! [[ -z $(hdparm -I $migrub | grep "TRIM supported") ]]; then
 			echo "#!/usr/bin/env bash" > /target/etc/cron.daily/trim
 			echo 'echo "*** $(date -R) ***" >> /var/log/trim.log' >> /target/etc/cron.daily/trim
 			echo "fstrim -v / >> /var/log/trim.log" >> /target/etc/cron.daily/trim
