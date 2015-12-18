@@ -321,6 +321,15 @@ function finalizando_1 () {
 			chroot /target systemctl disable psad
 		fi
 	fi
+	if [[ $(cat /sys/block/$migrub/queue/rotational) = "0" ]]; then
+		if [[ -z $(hdparm -I $migrub | grep "TRIM supported") ]]; then
+			echo "#!/usr/bin/env bash" > /target/etc/cron.daily/trim
+			echo 'echo "*** $(date -R) ***" >> /var/log/trim.log' >> /target/etc/cron.daily/trim
+			echo "fstrim -v / >> /var/log/trim.log" >> /target/etc/cron.daily/trim
+			chmod +x /target/etc/cron.daily/trim
+		fi
+		sed -i 's/GRUB_CMDLINE_LINUX_DEFAULT="acpi_osi=Linux swapaccount=1 cgroup_enable=memory security=apparmor apparmor=1 panic=10 quiet/GRUB_CMDLINE_LINUX_DEFAULT="acpi_osi=Linux swapaccount=1 cgroup_enable=memory security=apparmor apparmor=1 panic=10 quiet elevator=noop"/g' /target/etc/default/grub
+	fi
 	chmod 0600 /target/etc/sudoers
 	chmod 0644 /target/usr/bin/lxpolkit
 	chmod -R 0700 /target/home/user/
@@ -732,6 +741,9 @@ if [[ $install = "expert" ]]; then
 	if [[ $no_format = "yes" ]]; then 
 		fs_type_os=$(blkid -s TYPE "$install_dev" | awk -F"\"" '{ print $2 }')
 	else
+		if [[ $(cat /sys/block/$migrub/queue/rotational) = "0" ]]; then
+			$advertencia --text="Se ha detectado un disco SSD, se recomienda usar ext4 como sistema de archivos"
+		fi
 		choose_fs_os
 	fi
 else
@@ -1035,7 +1047,7 @@ if [[ $encrypt_os != "yes" ]]; then
 fi
 
 if [[ $fs_type_os = ext4 ]]; then
-	echo -e "$install_part\t/\t$fs_type_os\tdefaults,noatime,nodelalloc,commit=60,inode_readahead_blks=64,discard,errors=remount-ro\t0\t1" > $fspath
+	echo -e "$install_part\t/\t$fs_type_os\tdefaults,noatime,nodelalloc,commit=60,inode_readahead_blks=64,errors=remount-ro\t0\t1" > $fspath
 else
 	if [[ $fs_type_os = xfs ]]; then
 		echo -e "$install_part\t/\t$fs_type_os\tdefaults,rw,noatime,relatime,attr2,nobarrier,logbufs=8,largeio,inode64\t0\t1" > $fspath
@@ -1067,7 +1079,7 @@ if ! [[ -z $home_dev ]]; then
 		fi
 	fi
 	if [[ $fs_type_home = ext4 ]]; then
-		echo -e "$home_part\t/home\t$fs_type_home\tdefaults,noatime,nodelalloc,commit=60,inode_readahead_blks=64,discard,errors=remount-ro\t0\t3" >> $fspath
+		echo -e "$home_part\t/home\t$fs_type_home\tdefaults,noatime,nodelalloc,commit=60,inode_readahead_blks=64,errors=remount-ro\t0\t3" >> $fspath
 	else
 		if [[ $fs_type_home = xfs ]]; then
 			echo -e "$home_part\t/home\t$fs_type_home\tdefaults,rw,noatime,relatime,attr2,nobarrier,logbufs=8,largeio,inode64\t0\t3" >> $fspath
