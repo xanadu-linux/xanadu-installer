@@ -347,6 +347,9 @@ function finalizando_1 () {
 			echo "#!/usr/bin/env bash" > /target/etc/cron.daily/trim
 			echo 'echo "*** $(date -R) ***" >> /var/log/trim.log' >> /target/etc/cron.daily/trim
 			echo "fstrim -v / >> /var/log/trim.log" >> /target/etc/cron.daily/trim
+			if ! [[ -z $(hdparm -I $home_dev | grep "TRIM supported") ]]; then
+				echo "fstrim -v /home >> /var/log/trim.log" >> /target/etc/cron.daily/trim
+			fi
 			chmod +x /target/etc/cron.daily/trim
 		fi
 		sed -i 's/GRUB_CMDLINE_LINUX_DEFAULT="acpi_osi=Linux swapaccount=1 cgroup_enable=memory security=apparmor apparmor=1 panic=10 quiet/GRUB_CMDLINE_LINUX_DEFAULT="acpi_osi=Linux swapaccount=1 cgroup_enable=memory security=apparmor apparmor=1 panic=10 quiet elevator=noop"/g' /target/etc/default/grub
