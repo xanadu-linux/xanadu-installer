@@ -1,4 +1,16 @@
-commit 2dc80cace267bb14ad21b1e81ee883805042c022 (HEAD, origin/master, origin/HEAD, master)
+commit 04a2ea4fcf46b9ba7a79dfe5b6084bb8d7eea0c1 (HEAD, origin/master, origin/HEAD, master)
+Author: jose perez <sinfallas@gmail.com>
+Date:   Fri Dec 18 23:25:12 2015 -0430
+
+    * se agrega /home a la rutina de trim
+
+commit c3c0cebfd974134ffb6cc6893b1c358175e3a6bc
+Author: jose perez <sinfallas@gmail.com>
+Date:   Fri Dec 18 21:22:28 2015 -0430
+
+    * changelog
+
+commit 2dc80cace267bb14ad21b1e81ee883805042c022
 Author: jose perez <sinfallas@gmail.com>
 Date:   Fri Dec 18 21:21:44 2015 -0430
 
