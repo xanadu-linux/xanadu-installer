@@ -1,4 +1,16 @@
-commit 2e116975d6db5434fe08786ba77aefaddf71ca69 (HEAD, origin/master, origin/HEAD, master)
+commit 2dc80cace267bb14ad21b1e81ee883805042c022 (HEAD, origin/master, origin/HEAD, master)
+Author: jose perez <sinfallas@gmail.com>
+Date:   Fri Dec 18 21:21:44 2015 -0430
+
+    * se escribe un archivo de configuracion de x11 para tarjetas intel
+
+commit 8d9937caa60e49b2622e5f95f955d7217ccbf2ba
+Author: jose perez <sinfallas@gmail.com>
+Date:   Thu Dec 17 23:51:06 2015 -0430
+
+    * changelog
+
+commit 2e116975d6db5434fe08786ba77aefaddf71ca69
 Author: jose perez <sinfallas@gmail.com>
 Date:   Thu Dec 17 23:50:47 2015 -0430
 
