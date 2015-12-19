@@ -102,6 +102,7 @@ home_boot_excludes="/tmp/home_boot_exclude.list"
 parti="/tmp/particionador"
 xfspath="/target/etc/sysctl.d/12-xfs.conf"
 x11path="/target/etc/X11/xorg.conf"
+x11opt="/usr/share/x11/xorg.conf.d"
 fspath="/target/etc/fstab"
 light="/target/etc/lightdm/lightdm.conf"
 greeter="/target/etc/lightdm/lightdm-gtk-greeter.conf"
@@ -287,6 +288,26 @@ function finalizando_1 () {
 		echo ' Option "EXAOptimizeMigration" "true"' >> $x11path
 		echo ' Option "MigrationHeuristic" "greedy"' >> $x11path
 		echo 'EndSection' >> $x11path
+		echo 'Section "DRI"' > $x11opt/30-serverflags.conf
+		echo ' Mode 0660' >> $x11opt/30-serverflags.conf
+		echo 'EndSection' >> $x11opt/30-serverflags.conf
+		echo 'Section "Extensions"' >> $x11opt/30-serverflags.conf
+		echo ' Option "Composite" "Enable"' >> $x11opt/30-serverflags.conf
+		echo ' Option "RENDER" "Enable"' >> $x11opt/30-serverflags.conf
+		echo ' Option "DAMAGE" "Enable"' >> $x11opt/30-serverflags.conf
+		echo 'EndSection' >> $x11opt/30-serverflags.conf
+		echo 'Section "ServerFlags"' >> $x11opt/30-serverflags.conf
+		echo ' Option "AllowGLXWithComposite" "true"' >> $x11opt/30-serverflags.conf
+		echo ' Option "XAANoOffscreenPixmaps" "true"' >> $x11opt/30-serverflags.conf
+		echo ' Option "AddARGBGLXVisuals" "True"' >> $x11opt/30-serverflags.conf
+		echo ' Option "RandR" "on"' >> $x11opt/30-serverflags.conf
+		echo ' Option "RENDER" "on"' >> $x11opt/30-serverflags.conf
+		echo ' Option "DRI2" "True"' >> $x11opt/30-serverflags.conf
+		echo ' Option "GlxVisuals" "all"' >> $x11opt/30-serverflags.conf
+		echo ' Option "AutoAddDevices" "True"' >> $x11opt/30-serverflags.conf
+		echo ' Option "AutoEnableDevices" "True"' >> $x11opt/30-serverflags.conf
+		echo ' Option "AllowEmptyInput" "False"' >> $x11opt/30-serverflags.conf
+		echo 'EndSection' >> $x11opt/30-serverflags.conf
 	fi
 	if [[ $fs_type_os = "xfs" ]]; then
 		echo "fs.xfs.age_buffer_centisecs = 1500" > $xfspath
