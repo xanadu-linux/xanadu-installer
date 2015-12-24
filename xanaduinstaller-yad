@@ -12,89 +12,13 @@ if ! [[ -d /lib/live/mount/rootfs ]]; then
 fi
 [[ $DISPLAY ]] || { echo "No hay un servidor X corriendo. Saliendo..." ; exit 1 ; }
 
-function cleanup () {
-echo -e "\n @@@ Limpiando...\n" >> "$error_log"
-if $(df | grep -q /target/proc/); then
-	umount /target/proc/
-fi
-
-if $(df | grep -q /target/dev/); then
-	umount /target/dev/
-fi
-
-if $(df | grep -q /target/sys/); then
-	umount /target/sys/
-fi
-
-if $(df | grep -q $boot_dev); then
-	umount -l $boot_dev
-fi
-
-if $(df | grep -q /target_boot); then
-	umount -l /target_boot/
-fi
-
-if $(df | grep -q /target_home); then
-	umount -l /target_home/
-fi
-
-if $(df | grep -q $home_dev); then
-	umount $home_dev
-fi
-
-if $(df | grep -q "\/dev\/mapper\/home_fs"); then
-	umount /dev/mapper/home_fs
-fi
-
-if [[ -h /dev/mapper/home_fs ]]; then
-	cryptsetup luksClose home_fs
-fi
-
-if $(df | grep -q /target); then
-	umount -l /target/
-fi
-
-if $(df | grep -q $install_dev); then
-	umount $install_dev
-fi    
-
-if $(df | grep "\/dev\/mapper\/root_fs"); then
-	umount /dev/mapper/root_fs
-fi
-
-if [[ -h /dev/mapper/root_fs ]]; then
-	cryptsetup luksClose /dev/mapper/root_fs
-fi
-
-if [[ -d /target ]]; then
-	rm -rf /target
-fi
-
-if [[ -d /target_home ]]; then
-	rm -rf /target_home
-fi
-
-if [[ -d /target_boot ]]; then
-	rm -rf /target_boot
-fi
-
-rm -rf /target/tmp/*
-rm -rf /target/var/tmp/*
-rm -rf /target/var/cache/polipo/*
-rm -rf /target/root/.local/share/Trash/*
-rm -rf /target/home/*/.local/share/Trash/*
-rm -rf /target/home/*/.mozilla/firefox/*/*Cache*
-rm -rf /tmp/*
-rm -rf /var/tmp/*
-}
-
-trap cleanup 0 1 2 3 15
+trap "rm -f /run/$(basename $0).pid; exit" 0 1 2 3 15
 echo "$BASHPID" > /run/"$(basename $0)".pid
 
-wget -q -T 2 -O - https://raw.githubusercontent.com/sinfallas/xanadu-installer/master/xanaduinstaller-yad | sudo bash /dev/stdin
-if [[ $? = 0 ]]; then
-	exit 0
-fi
+#wget -q -T 2 -O - https://raw.githubusercontent.com/sinfallas/xanadu-installer/master/xanaduinstaller-yad | sudo bash /dev/stdin
+#if [[ $? = 0 ]]; then
+#	exit 0
+#fi
 error_log="/var/log/installer_error.log"
 miicono="--window-icon=/usr/share/icons/install-icon.png"
 rsync_excludes="/tmp/installer_exclude.list"
@@ -110,9 +34,9 @@ swapfile_blocksize="1024"
 swapfile_count="262144"
 pmount_fixed="no"
 fs_type_boot="ext4"
-msgprt='--progress-text="Creando particiones, por favor espere..." --title="Particionando"'
-advertencia='yad --skip-taskbar --fixed --center --text-align=fill --borders=6 --button="Aceptar":0 --button="Salir":1 --title="Advertencia"'
-errores='yad --skip-taskbar --fixed --center --title="Error" --window-icon=error --text-align=fill --borders=6'
+msgprt='--progress-text=Creando particiones, por favor espere... --title=Particionando'
+advertencia='yad --skip-taskbar --fixed --center --text-align=fill --borders=6 --button=Aceptar:0 --button=Salir:1 --title=Advertencia'
+errores='yad --skip-taskbar --fixed --center --title=Error --window-icon=error --text-align=fill --borders=6'
 progreso='yad --fixed --progress --pulsate --auto-close --skip-taskbar --center'
 grubversion=$(dpkg -l | grep -v bin | grep -v doc | awk '$2 ~ "grub-[pc]" {print $2}' | grep -v amd64 | grep -v i386 | grep -v common)
 memoria=$(grep "MemTotal" /proc/meminfo | awk '{print $2}')
@@ -398,6 +322,82 @@ function check_exit () {
 			exit 1
 		fi
 	fi
+}
+
+function cleanup () {
+echo -e "\n @@@ Limpiando...\n" >> "$error_log"
+if $(df | grep -q /target/proc/); then
+	umount /target/proc/
+fi
+
+if $(df | grep -q /target/dev/); then
+	umount /target/dev/
+fi
+
+if $(df | grep -q /target/sys/); then
+	umount /target/sys/
+fi
+
+if $(df | grep -q $boot_dev); then
+	umount -l $boot_dev
+fi
+
+if $(df | grep -q /target_boot); then
+	umount -l /target_boot/
+fi
+
+if $(df | grep -q /target_home); then
+	umount -l /target_home/
+fi
+
+if $(df | grep -q $home_dev); then
+	umount $home_dev
+fi
+
+if $(df | grep -q "\/dev\/mapper\/home_fs"); then
+	umount /dev/mapper/home_fs
+fi
+
+if [[ -h /dev/mapper/home_fs ]]; then
+	cryptsetup luksClose home_fs
+fi
+
+if $(df | grep -q /target); then
+	umount -l /target/
+fi
+
+if $(df | grep -q $install_dev); then
+	umount $install_dev
+fi    
+
+if $(df | grep "\/dev\/mapper\/root_fs"); then
+	umount /dev/mapper/root_fs
+fi
+
+if [[ -h /dev/mapper/root_fs ]]; then
+	cryptsetup luksClose /dev/mapper/root_fs
+fi
+
+if [[ -d /target ]]; then
+	rm -rf /target
+fi
+
+if [[ -d /target_home ]]; then
+	rm -rf /target_home
+fi
+
+if [[ -d /target_boot ]]; then
+	rm -rf /target_boot
+fi
+
+rm -rf /target/tmp/*
+rm -rf /target/var/tmp/*
+rm -rf /target/var/cache/polipo/*
+rm -rf /target/root/.local/share/Trash/*
+rm -rf /target/home/*/.local/share/Trash/*
+rm -rf /target/home/*/.mozilla/firefox/*/*Cache*
+rm -rf /tmp/*
+rm -rf /var/tmp/*
 }
 
 function preinstall () {
