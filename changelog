@@ -1,4 +1,42 @@
-commit 04a2ea4fcf46b9ba7a79dfe5b6084bb8d7eea0c1 (HEAD, origin/master, origin/HEAD, master)
+commit 556a292fc0d303a5b604fd711af3526a2fc1477c (HEAD, origin/master, origin/HEAD, master)
+Author: jose perez <sinfallas@gmail.com>
+Date:   Thu Dec 24 01:52:58 2015 -0430
+
+    * ultimos cambios
+
+commit c8693af902a215eb1f35dfaa57d8fd9ce2fed4b4
+Author: jose perez <sinfallas@gmail.com>
+Date:   Thu Dec 24 01:32:49 2015 -0430
+
+    * se corrigen errores al ejecutar gparted
+    * se elimina la barra de progreso al optimizar
+    * correcciones varias
+
+commit 84f818abcff4dccb67cadd576e1ab7212a078e28
+Author: jose perez <sinfallas@gmail.com>
+Date:   Thu Dec 24 00:26:00 2015 -0430
+
+    * correccion de errores en rsync
+
+commit e928b3f2a6abf5acec43d3774e97cbb6c2d8bfd8
+Author: jose perez <sinfallas@gmail.com>
+Date:   Wed Dec 23 23:43:48 2015 -0430
+
+    * bugfix
+
+commit 209f3ececcccd74c0f8d144eef379c7f94b0d4e2
+Author: jose perez <sinfallas@gmail.com>
+Date:   Wed Dec 23 23:42:25 2015 -0430
+
+    * bugfix
+
+commit c8577d9d671acaaaaf19bc6d314598f757375e2c
+Author: jose perez <sinfallas@gmail.com>
+Date:   Fri Dec 18 23:25:37 2015 -0430
+
+    * changelog
+
+commit 04a2ea4fcf46b9ba7a79dfe5b6084bb8d7eea0c1
 Author: jose perez <sinfallas@gmail.com>
 Date:   Fri Dec 18 23:25:12 2015 -0430
 
