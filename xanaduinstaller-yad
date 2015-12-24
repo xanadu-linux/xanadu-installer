@@ -58,7 +58,7 @@ exec 2>"$error_log"
 function advert () {
 	$advertencia --text="Esta opción eliminara toda la informacion del disco y no podra revertirse."
 	if [[ $? != 0 ]]; then
-		source /home/user/install
+		source /usr/bin/xanaduinstaller-yad
 	fi
 }
 
@@ -67,7 +67,7 @@ function dialogopart () {
 	if [[ -z "$dispositivo" ]]; then
 		$errores --button="Ir atras":0 --button="Salir":1 --text="No selecciono nada. Debe escoger un disco."
 		if [[ $? = 0 ]]; then
-			source /home/user/install
+			source /usr/bin/xanaduinstaller-yad
 		else
 			exit 1
 		fi
@@ -253,7 +253,7 @@ function finalizando_1 () {
 	fi
 	if (( $memoria > 4096000 )); then
 		echo "tmpfs /var/cache/apt/archives tmpfs noatime,async,nodev 0 0" >> $fspath
-		yad --skip-taskbar --fixed --center --text-align=fill --borders=6 --button="Aceptar":0 --button="Cancelar":1 --title="Finalizando" --text="¿Desea activar fail2ban, psad y aide? (No se recomienda si tiene menos de 4 GB de RAM)"
+		yad --skip-taskbar --fixed --center --text-align=fill --borders=6 --button=Aceptar:0 --button=Cancelar:1 --title=Finalizando --text="¿Desea activar fail2ban, psad y aide? (No se recomienda si tiene menos de 4 GB de RAM)"
 		if [[ $? = 0 ]]; then
 			chroot /target systemctl enable ntp
 			chroot /target systemctl enable fail2ban
@@ -404,13 +404,21 @@ function preinstall () {
 	case $ans in
 		0) miparticion ; check_exit ;;
 		1) milvm ; check_exit ;;
-		2) source /home/user/install ;;
+		2) source /usr/bin/xanaduinstaller-yad ;;
 		3) exit 0 ;;
 	esac
 }
 
 function choose_boot () {
 	boot_dev=$(find /dev -mindepth 1 -maxdepth 1  -name "*[sh]d[a-z][1-9]*" | sort | awk '{print "\n" $0 }' | yad $miicono --center --list --title="particion /boot" --text="Seleccione una particion para /boot." --separator="" --column ' ' --column 'Particiones' --height=400 --width=150 --button="Aceptar":0)
+	if [[ -z $boot_dev ]]; then
+		$errores --button="Ir atras":0 --button="Salir":1 --text="No selecciono nada. Debe escoger una particion. Que quiere hacer?"
+		if [[ $? = 0 ]]; then
+			choose_boot
+		else
+			exit 1
+		fi
+	fi
 }
 
 function fix_hostname () {
@@ -614,7 +622,7 @@ if [[ $install = "expert" ]]; then
   Ejecutar particionador ahora?"
 	ans="$?"
 	case $ans in
-		0) gparted ; check_exit ;;
+		0) gparted ;;
 		1) xterm -fa monaco -fs 12 -geometry 90x20+0+0 -hold -e cfdisk ;;
 		2)  ;;
 		3) exit 0 ;;
@@ -694,7 +702,7 @@ if [[ $install = "expert" ]]; then
 fi
 
 if ! [[ -f "$parti" ]]; then
-	blkid -c /dev/null | awk '{print $1 $2}' | yad $miicono --timeout 20 --text-info --title="Lista de particiones" --text="Lista de particiones (para referencia) Usted puede necesitar esto mas adelante." --width 820 --height 400 --button="Cerrar":0
+	blkid -c /dev/null | awk '{print $1 $2}' | yad $miicono --timeout 20 --text-info --title="Lista de particiones" --text="Lista de particiones (para referencia) Usted puede necesitar esto mas adelante." --width 820 --height 400 --button="Cerrar":0 & sleep 2
 fi
 
 if [[ -f "$parti" ]]; then
@@ -1259,7 +1267,7 @@ if [[ $change_user = "yes" ]]; then
 	fi
 fi
 
-finalizando_1 | $progreso --progress-text="Optimizando el sistema, por favor espere..." --title="Finalizando"
+finalizando_1
 
 cp "$error_log" /target/var/log/
 cleanup
