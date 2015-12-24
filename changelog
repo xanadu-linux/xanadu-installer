@@ -1,4 +1,17 @@
-commit 556a292fc0d303a5b604fd711af3526a2fc1477c (HEAD, origin/master, origin/HEAD, master)
+commit 93c41c9e2ebd82e58e241d9d3e718ec5668b2ab2 (HEAD, origin/master, origin/HEAD, master)
+Author: jose perez <sinfallas@gmail.com>
+Date:   Thu Dec 24 11:16:20 2015 -0430
+
+    * si se cambia el nombre de usuario se agrega a sudoers
+    * se agregan parametros al grub dependiendo de si son necesarios
+
+commit 613c60a139f262b06ce12475aa078a42f1be3936
+Author: jose perez <sinfallas@gmail.com>
+Date:   Thu Dec 24 01:53:33 2015 -0430
+
+    * changelog
+
+commit 556a292fc0d303a5b604fd711af3526a2fc1477c
 Author: jose perez <sinfallas@gmail.com>
 Date:   Thu Dec 24 01:52:58 2015 -0430
 
