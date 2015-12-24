@@ -35,9 +35,9 @@ swapfile_count="262144"
 pmount_fixed="no"
 fs_type_boot="ext4"
 msgprt='--progress-text=Creando particiones, por favor espere... --title=Particionando'
-advertencia='yad --skip-taskbar --fixed --center --text-align=fill --borders=6 --button=Aceptar:0 --button=Salir:1 --title=Advertencia'
-errores='yad --skip-taskbar --fixed --center --title=Error --window-icon=error --text-align=fill --borders=6'
-progreso='yad --fixed --progress --pulsate --auto-close --skip-taskbar --center'
+advertencia='yad --center --skip-taskbar --fixed --text-align=fill --borders=6 --button=Aceptar:0 --button=Salir:1 --title=Advertencia'
+errores='yad --center --skip-taskbar --fixed --title=Error --window-icon=error --text-align=fill --borders=6'
+progreso='yad --center --fixed --progress --pulsate --auto-close --skip-taskbar'
 grubversion=$(dpkg -l | grep -v bin | grep -v doc | awk '$2 ~ "grub-[pc]" {print $2}' | grep -v amd64 | grep -v i386 | grep -v common)
 memoria=$(grep "MemTotal" /proc/meminfo | awk '{print $2}')
 cpu=$(lscpu | grep "MHz" | awk '{print $3}')
@@ -58,7 +58,7 @@ exec 2>"$error_log"
 function advert () {
 	$advertencia --text="Esta opción eliminara toda la informacion del disco y no podra revertirse."
 	if [[ $? != 0 ]]; then
-		source $(basename $0)
+		source /home/user/install
 	fi
 }
 
@@ -67,7 +67,7 @@ function dialogopart () {
 	if [[ -z "$dispositivo" ]]; then
 		$errores --button="Ir atras":0 --button="Salir":1 --text="No selecciono nada. Debe escoger un disco."
 		if [[ $? = 0 ]]; then
-			source $(basename $0)
+			source /home/user/install
 		else
 			exit 1
 		fi
@@ -396,8 +396,6 @@ rm -rf /target/var/cache/polipo/*
 rm -rf /target/root/.local/share/Trash/*
 rm -rf /target/home/*/.local/share/Trash/*
 rm -rf /target/home/*/.mozilla/firefox/*/*Cache*
-rm -rf /tmp/*
-rm -rf /var/tmp/*
 }
 
 function preinstall () {
@@ -406,7 +404,7 @@ function preinstall () {
 	case $ans in
 		0) miparticion ; check_exit ;;
 		1) milvm ; check_exit ;;
-		2) source $(basename $0) ;;
+		2) source /home/user/install ;;
 		3) exit 0 ;;
 	esac
 }
@@ -1010,7 +1008,7 @@ if [[ -n $boot_dev ]]; then
 	sep_boot_opt="--exclude=/boot/*"
 fi
 
-rsync -av / /target/ --exclude-from="$rsync_excludes" ${sep_home_opt} ${sep_boot_opt} | tee >(yad $miicono --center --width=400 --fixed --progress --pulsate --auto-close --skip-taskbar --center --title="INSTALANDO" --progress-text="Copiando el sistema a la nueva particion, por favor espere.")
+rsync -av / /target/ --exclude-from=$rsync_excludes ${sep_home_opt} ${sep_boot_opt} | tee >(yad $miicono --center --width=400 --fixed --progress --pulsate --auto-close --skip-taskbar --center --title=INSTALANDO --progress-text="Copiando el sistema a la nueva particion, por favor espere.")
 
 if ! [[ -z $home_dev ]]; then
 	rsync -av /home/ /target_home/ --exclude-from="$home_boot_excludes" | tee >(yad $miicono --auto-close --progress --pulsate --width=350 --title="Copiando carpeta home a la nueva particion.")
