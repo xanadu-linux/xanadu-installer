@@ -1,4 +1,16 @@
-commit 9ce0e535dde15461d6228c0adf917fa7e706c564 (HEAD, origin/master, origin/HEAD, master)
+commit 9fb91298dc4e4c2bb72502e2c07e682d49715ee8 (HEAD, origin/master, origin/HEAD, master)
+Author: jose perez <sinfallas@gmail.com>
+Date:   Fri Feb 26 21:15:00 2016 -0430
+
+    * se cambia una comprobacion de arquitectura
+
+commit 54463c38ca361e64dddbe27de7436d47b3b26ba9 (tag: v0.3.1)
+Author: jose perez <sinfallas@gmail.com>
+Date:   Sat Dec 26 15:15:46 2015 -0430
+
+    * changelog
+
+commit 9ce0e535dde15461d6228c0adf917fa7e706c564
 Author: jose perez <sinfallas@gmail.com>
 Date:   Sat Dec 26 15:15:33 2015 -0430
 
@@ -67,7 +79,7 @@ Date:   Wed Dec 23 23:42:25 2015 -0430
 
     * bugfix
 
-commit c8577d9d671acaaaaf19bc6d314598f757375e2c
+commit c8577d9d671acaaaaf19bc6d314598f757375e2c (tag: v0.3)
 Author: jose perez <sinfallas@gmail.com>
 Date:   Fri Dec 18 23:25:37 2015 -0430
 
