@@ -76,7 +76,7 @@ function dialogopart () {
 	lvremove -f $(pvdisplay $(echo $dispositivo"*") | grep "VG" | awk '{print $3}' | uniq)
 	dd if=/dev/zero of="$dispositivo" bs=1024k count=1
 	partprobe "$dispositivo"
-	if [[ $(arch) = x86_64 ]]; then
+	if [[ $(arch) = x86_64 ]] || [[ $(arch) = amd64 ]]; then
 		if [[ -f /sys/firmware/efi/runtime ]]; then
 			parted -s "$dispositivo" -- mklabel gpt
 			parted -a optimal -s "$dispositivo" -- mkpart primary fat32 3 260
