@@ -293,6 +293,8 @@ function finalizando_1 () {
 	chroot /target systemctl enable systemd-readahead-collect 
 	chroot /target systemctl enable systemd-readahead-replay
 	chroot /target systemctl enable swapspace
+	chroot /target systemctl enable dnsmasq
+	chroot /target systemctl enable dnscrypt-proxy
 	chroot /target systemctl disable clamav-freshclam
 	chroot /target systemctl disable i2p
 	chroot /target systemctl disable memlockd
