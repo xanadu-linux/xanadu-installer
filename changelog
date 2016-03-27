@@ -1,4 +1,16 @@
-commit 1fc8d400ab6d2fe00a613abfb208aee387f4cef7 (HEAD, origin/master, origin/HEAD, master)
+commit 947052e88e313fb9dfd14ce3b6e14c1ef37b4fd1 (HEAD, origin/master, origin/HEAD, master)
+Author: jose perez <sinfallas@gmail.com>
+Date:   Sat Mar 26 22:21:10 2016 -0430
+
+    * se activa dnsmasq y dnscrypt al final del instalador
+
+commit 727baececc2d2919ee708374378d4b9b0ac63fe4 (tag: v0.3.2)
+Author: jose perez <sinfallas@gmail.com>
+Date:   Fri Mar 4 18:55:48 2016 -0430
+
+    * changelog
+
+commit 1fc8d400ab6d2fe00a613abfb208aee387f4cef7
 Author: jose perez <sinfallas@gmail.com>
 Date:   Fri Mar 4 18:55:37 2016 -0430
 
