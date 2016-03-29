@@ -1,4 +1,16 @@
-commit 947052e88e313fb9dfd14ce3b6e14c1ef37b4fd1 (HEAD, origin/master, origin/HEAD, master)
+commit 3b27373a22c6b454d15d1a14ab6ef73da8926700 (HEAD, origin/master, origin/HEAD, master)
+Author: jose perez <sinfallas@gmail.com>
+Date:   Mon Mar 28 20:33:13 2016 -0430
+
+    * se corrige un error en el if que impide ejecutar el instalador si no hay internet
+
+commit 047658da2da836b44f21b7eda9faff64b143a581
+Author: jose perez <sinfallas@gmail.com>
+Date:   Sat Mar 26 22:21:56 2016 -0430
+
+    * changelog
+
+commit 947052e88e313fb9dfd14ce3b6e14c1ef37b4fd1
 Author: jose perez <sinfallas@gmail.com>
 Date:   Sat Mar 26 22:21:10 2016 -0430
 
