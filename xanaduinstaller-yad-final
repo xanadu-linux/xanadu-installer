@@ -175,7 +175,6 @@ function finalizando_1 () {
 	sed -i 's_UMASK		022_UMASK	027_g' /target/etc/login.defs
 	sed -i 's_/bin/bash_/usr/bin/fish_g' /target/etc/passwd
 	echo "default-user-image=/usr/share/images/desktop-base/logo1.png" >> $greeter
-	echo "user ALL=(ALL) ALL" > /target/etc/sudoers.d/live
 	echo "umask 027" >> /target/etc/profile
 	echo "auth required pam_succeed_if.so user != root quiet" >> /target/etc/pam.d/lightdm
 	echo "proc /proc proc defaults,hidepid=2 0 0" >> $fspath
@@ -278,14 +277,11 @@ function finalizando_1 () {
 	sed -i 's/GRUB_CMDLINE_LINUX_DEFAULT="quiet"/GRUB_CMDLINE_LINUX_DEFAULT="acpi_osi=Linux swapaccount=1 cgroup_enable=memory security=apparmor apparmor=1 panic=10 quiet '$i915 $elev'"/g' /target/etc/default/grub
 	chmod 0600 /target/etc/sudoers
 	chmod 0644 /target/usr/bin/lxpolkit
-	chmod -R 0700 /target/home/user/
 	chroot /target chmod -s /usr/bin/passwd
 	chroot /target chmod -s /usr/bin/wall
 	chroot /target chmod -s /bin/su
 	chroot /target groupadd -r fuse
-	chroot /target adduser user sambashare
 	chroot /target chage -M 365 root
-	chroot /target chage -M 183 user
 	chroot /target yes "" | sensors-detect
 	chroot /target iucode_tool --scan-system
 	chroot /target update-initramfs -u
@@ -1225,6 +1221,13 @@ if [[ $change_user = "yes" ]]; then
 		sed -i "s/\/home\/$oldname/\/home\/$newname/g" "$i"
 	done
 	echo "$newname ALL=(ALL) ALL" > /target/etc/sudoers.d/live
+	chroot /target adduser $newname sambashare
+	chroot /target chage -M 183 $newname
+else
+	echo "user ALL=(ALL) ALL" > /target/etc/sudoers.d/live
+	chroot /target adduser user sambashare
+	chroot /target chage -M 183 user
+	chmod -R 0700 /target/home/user/
 fi
 
 if [[ $change_user = "yes" ]]; then
