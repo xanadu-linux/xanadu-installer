@@ -1,4 +1,16 @@
-commit a85ee4b5f0a7b621d786344f7b01e950d712a774 (HEAD, origin/master, origin/HEAD, master)
+commit 231a45f705bebef0572fe598571099c47fec0a1d (HEAD, origin/master, origin/HEAD, master)
+Author: jose perez <sinfallas@gmail.com>
+Date:   Tue Mar 29 18:41:07 2016 -0430
+
+    * se colocan nuevas opciones al cambiar el usuario
+
+commit bc025465623e599d45c3c5d67bdff6fd87530a6e
+Author: jose perez <sinfallas@gmail.com>
+Date:   Tue Mar 29 17:42:52 2016 -0430
+
+    * changelog
+
+commit a85ee4b5f0a7b621d786344f7b01e950d712a774
 Author: jose perez <sinfallas@gmail.com>
 Date:   Tue Mar 29 17:42:17 2016 -0430
 
