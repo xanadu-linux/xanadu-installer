@@ -1,4 +1,16 @@
-commit 3b27373a22c6b454d15d1a14ab6ef73da8926700 (HEAD, origin/master, origin/HEAD, master)
+commit a85ee4b5f0a7b621d786344f7b01e950d712a774 (HEAD, origin/master, origin/HEAD, master)
+Author: jose perez <sinfallas@gmail.com>
+Date:   Tue Mar 29 17:42:17 2016 -0430
+
+    * se aumenta el tiempo de timeout en wget
+
+commit b6adcf64844c4903a0fc7bf6b94e940c8be26521
+Author: jose perez <sinfallas@gmail.com>
+Date:   Mon Mar 28 20:33:39 2016 -0430
+
+    * changelog
+
+commit 3b27373a22c6b454d15d1a14ab6ef73da8926700
 Author: jose perez <sinfallas@gmail.com>
 Date:   Mon Mar 28 20:33:13 2016 -0430
 
