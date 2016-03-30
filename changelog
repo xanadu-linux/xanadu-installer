@@ -1,4 +1,16 @@
-commit 231a45f705bebef0572fe598571099c47fec0a1d (HEAD, origin/master, origin/HEAD, master)
+commit 98562730f32237153a96162b5030e61953694fab (HEAD, origin/master, origin/HEAD, master)
+Author: jose perez <sinfallas@gmail.com>
+Date:   Tue Mar 29 21:30:01 2016 -0430
+
+    * se coloca la funcion para la clave del grub
+
+commit d7731543a2e322acbb4a84d62c131a1693a79b0f
+Author: jose perez <sinfallas@gmail.com>
+Date:   Tue Mar 29 18:41:26 2016 -0430
+
+    * changelog
+
+commit 231a45f705bebef0572fe598571099c47fec0a1d
 Author: jose perez <sinfallas@gmail.com>
 Date:   Tue Mar 29 18:41:07 2016 -0430
 
