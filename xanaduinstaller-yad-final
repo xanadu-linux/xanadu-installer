@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/bin/bash -x
 # Made by Sinfallas <sinfallas@yahoo.com>
 # Licence: GPL-2
 # Based on refractainstaller-8.0.3 by Dean Linkous
@@ -47,7 +47,7 @@ if (( $cpu2 < 1000 )); then
 else
 	cpu3="<span color='#00b300'>$cpu2</span>"
 fi
-rm -f "$parti"
+rm -f $parti
 exec 2>"$error_log"
 
 function advert () {
@@ -74,55 +74,55 @@ function dialogopart () {
 		umount -f $i
 	done
 	lvremove -f $(pvdisplay $(echo $dispositivo"*") | grep "VG" | awk '{print $3}' | uniq)
-	dd if=/dev/zero of="$dispositivo" bs=1024k count=1
-	partprobe "$dispositivo"
+	dd if=/dev/zero of=$dispositivo bs=1024k count=1
+	partprobe $dispositivo
 	if [[ $(arch) = x86_64 ]] || [[ $(arch) = amd64 ]]; then
 		if [[ -f /sys/firmware/efi/runtime ]]; then
-			parted -s "$dispositivo" -- mklabel gpt
-			parted -a optimal -s "$dispositivo" -- mkpart primary fat32 3 260
-			parted "$dispositivo" set 1 esp on
-			mkfs.vfat -n BOOT -F 32 $(fdisk -l "$dispositivo" | grep "EFI" | awk '{print $1}')
+			parted -s $dispositivo -- mklabel gpt
+			parted -a optimal -s $dispositivo -- mkpart primary fat32 3 260
+			parted $dispositivo set 1 esp on
+			mkfs.vfat -n BOOT -F 32 $(fdisk -l $dispositivo | grep "EFI" | awk '{print $1}')
 			touch /tmp/efi
 		else
-			parted -s "$dispositivo" -- mklabel gpt
-			parted -a optimal -s "$dispositivo" -- mkpart non-fs 2 3
-			parted "$dispositivo" set 1 bios_grub on
-			parted -a optimal -s "$dispositivo" -- mkpart primary ext4 3 260
-			parted "$dispositivo" set 2 boot on
-			mkfs.ext4 -L boot -F $(fdisk -l "$dispositivo" | grep "EFI" | awk '{print $1}')
+			parted -s $dispositivo -- mklabel gpt
+			parted -a optimal -s $dispositivo -- mkpart non-fs 2 3
+			parted $dispositivo set 1 bios_grub on
+			parted -a optimal -s $dispositivo -- mkpart primary ext4 3 260
+			parted $dispositivo set 2 boot on
+			mkfs.ext4 -L boot -F $(fdisk -l $dispositivo | grep "EFI" | awk '{print $1}')
 		fi
 	else
-		parted -s "$dispositivo" -- mklabel msdos
-		parted -a optimal -s "$dispositivo" -- mkpart primary ext4 3 260
-		parted "$dispositivo" set 1 boot on
-		mkfs.ext4 -L boot -F $(fdisk -l "$dispositivo" | grep "Linux" | awk '{print $1}')
+		parted -s $dispositivo -- mklabel msdos
+		parted -a optimal -s $dispositivo -- mkpart primary ext4 3 260
+		parted $dispositivo set 1 boot on
+		mkfs.ext4 -L boot -F $(fdisk -l $dispositivo | grep "Linux" | awk '{print $1}')
 	fi
-	parted -a optimal -s "$dispositivo" -- mkpart primary linux-swap 260 1330
-	mkswap -L swap -f $(fdisk -l "$dispositivo" | grep "swap" | awk '{print $1}')
+	parted -a optimal -s $dispositivo -- mkpart primary linux-swap 260 1330
+	mkswap -L swap -f $(fdisk -l $dispositivo | grep "swap" | awk '{print $1}')
 }
 
 function milvm2 () {
-	parted -a optimal -s "$dispositivo" -- mkpart extended 1330 100%
-	parted -a optimal -s "$dispositivo" -- mkpart logic ext2 1331 100%
-	logica=$(parted -s "$dispositivo" -l | grep "1331" | awk '{print $1}')
+	parted -a optimal -s $dispositivo -- mkpart extended 1330 100%
+	parted -a optimal -s $dispositivo -- mkpart logic ext2 1331 100%
+	logica=$(parted -s $dispositivo -l | grep "1331" | awk '{print $1}')
 	pvcreate -ffy $(echo $dispositivo"$logica")
 	vgcreate -fy xanadu $(echo $dispositivo"$logica")
 	lvcreate -l 100%FREE -n root xanadu
-	partprobe "$dispositivo"
+	partprobe $dispositivo
 	mkfs.ext4 -F /dev/mapper/xanadu-root
-	touch "$parti"
+	touch $parti
 }
 
 function milvm3 () {
-	parted -a optimal -s "$dispositivo" -- mkpart non-fs 1331 100%
-	parted "$dispositivo" set 4 lvm on
-	casilvm=$(fdisk -l "$dispositivo" | grep "LVM" | awk '{print $1}')
-	pvcreate -ffy "$casilvm"
-	vgcreate -fy xanadu "$casilvm"
+	parted -a optimal -s $dispositivo -- mkpart non-fs 1331 100%
+	parted $dispositivo set 4 lvm on
+	casilvm=$(fdisk -l $dispositivo | grep "LVM" | awk '{print $1}')
+	pvcreate -ffy $casilvm
+	vgcreate -fy xanadu $casilvm
 	lvcreate -l 100%FREE -n root xanadu
-	partprobe "$dispositivo"
+	partprobe $dispositivo
 	mkfs.ext4 -F /dev/mapper/xanadu-root
-	touch "$parti"
+	touch $parti
 }
 
 function milvm () {
@@ -132,7 +132,7 @@ function milvm () {
 		exit 0
 	fi
 	dialogopart
-	if [[ $(parted -s "$dispositivo" -- print | grep "Partition" | awk '{print $3}') = msdos ]]; then
+	if [[ $(parted -s $dispositivo -- print | grep "Partition" | awk '{print $3}') = msdos ]]; then
 		milvm2 | $progreso $msgprt
 	else
 		milvm3 | $progreso $msgprt
@@ -140,10 +140,10 @@ function milvm () {
 }
 
 function miparticion2 () {
-	parted -a optimal -s "$dispositivo" -- mkpart primary ext4 1331 100%
-	partprobe "$dispositivo"
-	mkfs.ext4 -L root -F $(fdisk -l "$dispositivo" | grep "Sistema de ficheros de Linux" | awk '{print $1}')
-	touch "$parti"
+	parted -a optimal -s $dispositivo -- mkpart primary ext4 1331 100%
+	partprobe $dispositivo
+	mkfs.ext4 -L root -F $(fdisk -l $dispositivo | grep "Sistema de ficheros de Linux" | awk '{print $1}')
+	touch $parti
 }
 
 function miparticion () {
@@ -356,9 +356,9 @@ if $(df | grep -q /target_home); then
 	umount -l /target_home/
 fi
 
-if $(df | grep -q $home_dev); then
-	umount $home_dev
-fi
+#if $(df | grep -q $home_dev); then
+#	umount $home_dev
+#fi
 
 if $(df | grep -q "\/dev\/mapper\/home_fs"); then
 	umount /dev/mapper/home_fs
@@ -447,7 +447,7 @@ function select_hostname () {
 	#test_hostname
 }
 
-cat > "$rsync_excludes" <<EOF
+cat > $rsync_excludes <<EOF
 
 - /dev/*
 - /cdrom/*
@@ -492,9 +492,9 @@ cat > "$rsync_excludes" <<EOF
 - /var/tmp/*
 
 EOF
-chmod 666 "$rsync_excludes"
+chmod 666 $rsync_excludes
 
-cat > "$home_boot_excludes" <<EOF
+cat > $home_boot_excludes <<EOF
 
 - *.gvfs
 - *.Xauthority
@@ -502,7 +502,7 @@ cat > "$home_boot_excludes" <<EOF
 - *.xsession-errors*
 
 EOF
-chmod 666 "$home_boot_excludes"
+chmod 666 $home_boot_excludes
 
 yad $miicono --center --text-align=fill --borders=6 --title="Instalar Xanadu GNU/Linux" --button="Instalacion simple":0 --button="Instalacion experta":1 --button="Salir":2 --text="
 
@@ -775,7 +775,7 @@ el sistema operativo"
 
 if [[ $install = "expert" ]]; then
 	if [[ $no_format = "yes" ]]; then 
-		fs_type_os=$(blkid -s TYPE "$install_dev" | awk -F"\"" '{ print $2 }')
+		fs_type_os=$(blkid -s TYPE $install_dev | awk -F"\"" '{ print $2 }')
 	else
 		if [[ $(cat /sys/block/$migrub/queue/rotational) = "0" ]]; then
 			$advertencia --text="Se ha detectado un disco SSD, se recomienda usar ext4 como sistema de archivos"
@@ -938,7 +938,7 @@ cleanup
 if [[ $write_random = "yes" ]]; then
 	if [[ $encrypt_os = "yes" ]]; then
        		exec 2>&1
-		dd if=/dev/urandom of="$install_dev"
+		dd if=/dev/urandom of=$install_dev
 		exec 2>>"$error_log"
 	fi  
 fi
@@ -946,7 +946,7 @@ fi
 if [[ $write_random = "yes" ]]; then
 	if [[ $encrypt_home = "yes" ]]; then
 		exec 2>&1
-		dd if=/dev/urandom of="$home_dev"
+		dd if=/dev/urandom of=$home_dev
 		exec 2>>"$error_log"
 	fi  
 fi
@@ -955,12 +955,12 @@ if [[ $write_zero = "yes" ]]; then
 	dd if=/dev/zero of="$install_dev"
 	if [[ $sep_home = "yes" ]]; then
 		exec 2>&1
-		dd if=/dev/zero of="$home_dev"
+		dd if=/dev/zero of=$home_dev
 		exec 2>>"$error_log"
 	fi
 	if [[ $sep_boot = "yes" ]]; then
 		exec 2>&1
-		dd if=/dev/zero of="$boot_dev"
+		dd if=/dev/zero of=$boot_dev
 		exec 2>>"$error_log"
 	fi
 fi
@@ -968,8 +968,8 @@ fi
 mkdir /target ;  check_exit
 
 if [[ $encrypt_os = yes ]]; then
-	cryptsetup luksFormat "$install_dev" ; check_exit
-	cryptsetup luksOpen "$install_dev" root_fs ; check_exit
+	cryptsetup luksFormat $install_dev ; check_exit
+	cryptsetup luksOpen $install_dev root_fs ; check_exit
 	install_part="/dev/mapper/root_fs"
 else
 	install_part="$install_dev"
@@ -980,22 +980,22 @@ if [[ $no_format != "yes" ]]; then
 		echo "1" > /dev/null
 	else
 		if [[ $fs_type_os = ext4 ]]; then
-			mkfs.$fs_type_os -F "$install_part" ; check_exit
-			tune2fs -r 10000 "$install_part" ; check_exit
+			mkfs.ext4 -F $install_part ; check_exit
+			tune2fs -r 10000 $install_part ; check_exit
 		else
-			mkfs.$fs_type_os -f "$install_part" ; check_exit
+			mkfs.$fs_type_os -f $install_part ; check_exit
 		fi
 	fi
 fi
 
-mount "$install_part" /target ; check_exit 
+mount $install_part /target ; check_exit 
 
 if [[ -n $home_dev ]]; then
 	mkdir /target_home ; check_exit
 	if [[ $encrypt_home = yes ]]; then
-		cryptsetup luksFormat "$home_dev"
+		cryptsetup luksFormat $home_dev
 		check_exit
-		cryptsetup luksOpen "$home_dev" home_fs
+		cryptsetup luksOpen $home_dev home_fs
 		check_exit
 		home_part="/dev/mapper/home_fs"
 	else
@@ -1003,13 +1003,13 @@ if [[ -n $home_dev ]]; then
 	fi
 	if [[ $no_format != "yes" ]]; then
 		if [[ $fs_type_os = ext4 ]]; then
-			mkfs.$fs_type_home -F "$home_part" ; check_exit
-			tune2fs -r 10000 "$home_part" ; check_exit
+			mkfs.ext4 -F $home_part ; check_exit
+			tune2fs -r 10000 $home_part ; check_exit
 		else
-			mkfs.$fs_type_home -f "$home_part" ; check_exit
+			mkfs.$fs_type_home -f $home_part ; check_exit
 		fi
 	fi
-	mount "$home_part" /target_home ; check_exit
+	mount $home_part /target_home ; check_exit
 	sep_home_opt="--exclude=/home/*"
 fi
 
@@ -1020,7 +1020,7 @@ if [[ -n $boot_dev ]]; then
 			echo "1" > /dev/null
 		else
 			if [[ $fs_type_os = ext4 ]]; then
-				mkfs.$fs_type_boot -F $boot_dev ; check_exit
+				mkfs.ext4 -F $boot_dev ; check_exit
 			else
 				mkfs.$fs_type_boot -f $boot_dev ; check_exit
 			fi
@@ -1033,14 +1033,14 @@ fi
 rsync -av / /target/ --exclude-from=$rsync_excludes ${sep_home_opt} ${sep_boot_opt} | tee >(yad $miicono --center --width=400 --fixed --progress --pulsate --auto-close --skip-taskbar --center --title=INSTALANDO --progress-text="Copiando el sistema a la nueva particion, por favor espere.")
 
 if ! [[ -z $home_dev ]]; then
-	rsync -av /home/ /target_home/ --exclude-from="$home_boot_excludes" | tee >(yad $miicono --auto-close --progress --pulsate --width=350 --title="Copiando carpeta home a la nueva particion.")
+	rsync -av /home/ /target_home/ --exclude-from=$home_boot_excludes | tee >(yad $miicono --auto-close --progress --pulsate --width=350 --title="Copiando carpeta home a la nueva particion.")
 fi
 
 if [[ -n $boot_dev ]]; then
-	rsync -av /boot/ /target_boot/ --exclude-from="$home_boot_excludes" | tee >(yad $miicono --auto-close --progress --pulsate --width=350 --title="Copiando archivos a la particion boot.")
+	rsync -av /boot/ /target_boot/ --exclude-from=$home_boot_excludes | tee >(yad $miicono --auto-close --progress --pulsate --width=350 --title="Copiando archivos a la particion boot.")
 fi
 
-dd if=/dev/zero of=/target/swapfile bs="$swapfile_blocksize" count="$swapfile_count" | \
+dd if=/dev/zero of=/target/swapfile bs=$swapfile_blocksize count=$swapfile_count | \
 tee >(yad $miicono --auto-close --progress --pulsate --width=350 --title="Creando un archivo swap...")
 mkswap /target/swapfile ; check_exit
 
@@ -1079,7 +1079,7 @@ if [[ $encrypt_os != "yes" ]]; then
 		else
 			rootfslabel=$(yad $miicono --center --entry --title="Etiqueta del Sistema de Archivos" --text="Enter a disk label for $install_dev" --width=300 --button="Aceptar":0)
 			if [[ -n $rootfslabel ]]; then
-				e2label "$install_dev"  "$rootfslabel"
+				e2label $install_dev $rootfslabel
 				install_part="LABEL=$rootfslabel"
 			else
 				install_part="$install_dev"
@@ -1112,7 +1112,7 @@ if ! [[ -z $home_dev ]]; then
 				else
 					homefslabel=$(yad $miicono --center --entry --title="Filesystem Label" --text="Enter a disk label for $home_dev" --width=300 --button="Aceptar":0)
 					if [[ -n $homefslabel ]]; then
-						e2label "$home_dev"  "$homefslabel"
+						e2label $home_dev $homefslabel
 						home_part="LABEL=$homefslabel"
 					else
 						home_part="$home_dev"
@@ -1144,7 +1144,7 @@ if [[ -n $boot_dev ]]; then
 			else
 				bootfslabel=$(yad $miicono --center --entry --title="Filesystem Label" --text="Enter a disk label for $boot_dev" --width=300 --button="Aceptar":0)
 				if [[ -n $bootfslabel ]]; then
-					e2label "$boot_dev"  "$bootfslabel"
+					e2label $boot_dev $bootfslabel
 					boot_part="LABEL=$bootfslabel"
 				else
 					boot_part="$boot_dev"
@@ -1303,7 +1303,7 @@ if [[ $edit_sudoers = "yes" ]]; then
 		ans="$?"
 	if [[ $ans = "0" ]]; then
 		if [[ -n $newname ]]; then
-			sed -i~ '/sudo-mode/s/true/false/' /target/home/"$newname"/.gconf/apps/gksu/%gconf.xml
+			sed -i~ '/sudo-mode/s/true/false/' /target/home/$newname/.gconf/apps/gksu/%gconf.xml
 		else
 			sed -i~ '/sudo-mode/s/true/false/' /target/home/user/.gconf/apps/gksu/%gconf.xml
 		fi
@@ -1325,14 +1325,14 @@ if [[ $change_user = "yes" ]]; then
 		ans="$?"
 	if [[ $ans = 0 ]]; then
 		exec 2>&1
-		chroot /target passwd "$newname"
+		chroot /target passwd $newname
 		exec 2>>"$error_log"
 	fi
 fi
 
 finalizando_1
 
-cp "$error_log" /target/var/log/
+cp $error_log /target/var/log/
 cleanup
 
 yad $miicono --image=gtk-dialog-info --timeout 10 --fixed --center --width=500 --title="Instalador" --text-align=fill --borders=6 --button="Apagar":0 --button="Reiniciar":1 --button="Salir":2 --text=" Instalacion completa. \n\n Durante el primer inicio es posible que el sistema se reinicie automaticamente.\n\n Ejecute el post-instalador luego del primer inicio de su sistema.\n"
