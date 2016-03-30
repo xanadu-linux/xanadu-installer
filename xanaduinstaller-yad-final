@@ -152,6 +152,13 @@ function miparticion () {
 	miparticion2 | $progreso $msgprt
 }
 
+function parauser () {
+	echo "user ALL=(ALL) ALL" > /target/etc/sudoers.d/live
+	chroot /target adduser user sambashare
+	chroot /target chage -M 183 user
+	chmod -R 0700 /target/home/user/
+}
+
 function finalizando_1 () {
 	rmdir /target/live-build/
 	rm -f /target/etc/apt/preferences.d/exclude.pref
@@ -182,6 +189,9 @@ function finalizando_1 () {
 	echo "tmpfs /tmp tmpfs noatime,async,nosuid,noexec,nodev,rw 0 0" >> $fspath
 	echo "sshd : ALL" >> /target/etc/hosts.allow
 	echo 'DPkg::Post-Invoke {"echo Ejecutando prelink, espere...;/etc/cron.daily/prelink";}' > /target/etc/apt/apt.conf
+	if [[ $install = "simple" ]]; then
+		parauser
+	fi
 	if ! [[ -z $(fdisk -l | grep "swap" | awk '{print $1}') ]]; then
 		rm -f /target/swapfile
 		sed -i 's_/swapfile_#/swapfile_g' $fspath
@@ -1223,11 +1233,52 @@ if [[ $change_user = "yes" ]]; then
 	echo "$newname ALL=(ALL) ALL" > /target/etc/sudoers.d/live
 	chroot /target adduser $newname sambashare
 	chroot /target chage -M 183 $newname
+	grubuser=$(echo $newname)
+	function grubclave () {
+		miclave=$(yad --fixed --center --text-align=fill --borders=6 --title="Clave del Grub" --text="Introduzca una clave para el GRUB, debe ser diferente a la clave del usuario." --entry)
+		if [[ $? = 0 ]]; then
+			if ! [[ -z $miclave ]]; then
+				algrub=$(echo -e "$miclave""\n""$miclave" | grub-mkpasswd-pbkdf2 | awk '/grub.pbkdf/{print$NF}')
+				echo 'cat << EOF' >> /etc/grub.d/00_header
+				echo 'set superusers='$(echo '"'$grubuser'"') >> /etc/grub.d/00_header
+				echo 'password' $grubuser $algrub >> /etc/grub.d/00_header
+				echo 'EOF' >> /etc/grub.d/00_header
+				update-grub2
+			else
+				$errores --text="Debe introducir una contraseña"
+				grubclave
+			fi
+		fi
+
+	}
+	$advertencia --text="¿Desea colocar una clave al Grub?"
+	if [[ $? = 0 ]]; then
+		grubclave
+	fi
 else
-	echo "user ALL=(ALL) ALL" > /target/etc/sudoers.d/live
-	chroot /target adduser user sambashare
-	chroot /target chage -M 183 user
-	chmod -R 0700 /target/home/user/
+	parauser
+	grubuser="user"
+	function grubclave () {
+		miclave=$(yad --fixed --center --text-align=fill --borders=6 --title="Clave del Grub" --text="Introduzca una clave para el GRUB, debe ser diferente a la clave del usuario." --entry)
+		if [[ $? = 0 ]]; then
+			if ! [[ -z $miclave ]]; then
+				algrub=$(echo -e "$miclave""\n""$miclave" | grub-mkpasswd-pbkdf2 | awk '/grub.pbkdf/{print$NF}')
+				echo 'cat << EOF' >> /etc/grub.d/00_header
+				echo 'set superusers='$(echo '"'$grubuser'"') >> /etc/grub.d/00_header
+				echo 'password' $grubuser $algrub >> /etc/grub.d/00_header
+				echo 'EOF' >> /etc/grub.d/00_header
+				update-grub2
+			else
+				$errores --text="Debe introducir una contraseña"
+				grubclave
+			fi
+		fi
+
+	}
+	$advertencia --text="¿Desea colocar una clave al Grub?"
+	if [[ $? = 0 ]]; then
+		grubclave
+	fi
 fi
 
 if [[ $change_user = "yes" ]]; then
