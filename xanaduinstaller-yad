@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-wget -q -T 4 -O /tmp/xanaduinstaller-tmp - https://raw.githubusercontent.com/sinfallas/xanadu-installer/master/xanaduinstaller-yad-final
+wget -q -T 4 -O /tmp/xanaduinstaller-tmp - https://raw.githubusercontent.com/xanadu-linux/xanadu-installer/master/xanaduinstaller-yad-final
 if [[ -s /tmp/xanaduinstaller-tmp ]]; then
 	chmod +x /tmp/xanaduinstaller-tmp
 	source /tmp/xanaduinstaller-tmp
