@@ -37,6 +37,9 @@ grubversion=$(dpkg -l | grep -v bin | grep -v doc | awk '$2 ~ "grub-[pc]" {print
 memoria=$(grep "MemTotal" /proc/meminfo | awk '{print $2}')
 cpu=$(lscpu | grep "MHz" | awk '{print $3}')
 cpu2=${cpu%.*}
+miver=$(cat /etc/os-release | grep "VERSION_ID" | cut -d "=" -f2)
+mive=${miver#'"'}
+miver3=${mive%'"'}
 if (( $memoria < 512000 )); then
 	memoria2="<span color='#ff0000'>$memoria</span>"
 else
@@ -504,7 +507,7 @@ cat > $home_boot_excludes <<EOF
 EOF
 chmod 666 $home_boot_excludes
 
-yad $miicono --center --text-align=fill --borders=6 --title="Instalar Xanadu GNU/Linux" --button="Instalacion simple":0 --button="Instalacion experta":1 --button="Salir":2 --text="
+yad $miicono --center --text-align=fill --borders=6 --title="Instalar Xanadu GNU/Linux $miver3" --button="Instalacion simple":0 --button="Instalacion experta":1 --button="Salir":2 --text="
 
  Esta aplicacion instalara Xanadu GNU/Linux en su equipo.
 
