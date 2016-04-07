@@ -37,6 +37,9 @@ grubversion=$(dpkg -l | grep -v bin | grep -v doc | awk '$2 ~ "grub-[pc]" {print
 memoria=$(grep "MemTotal" /proc/meminfo | awk '{print $2}')
 cpu=$(lscpu | grep "MHz" | awk '{print $3}')
 cpu2=${cpu%.*}
+miver=$(cat /etc/os-release | grep "VERSION_ID" | cut -d "=" -f2)
+mive=${miver#'"'}
+miver3=${mive%'"'}
 if (( $memoria < 512000 )); then
 	memoria2="<span color='#ff0000'>$memoria</span>"
 else
@@ -47,7 +50,7 @@ if (( $cpu2 < 1000 )); then
 else
 	cpu3="<span color='#00b300'>$cpu2</span>"
 fi
-rm -f $parti
+rm -f "$parti"
 exec 2>"$error_log"
 
 function advert () {
@@ -74,55 +77,55 @@ function dialogopart () {
 		umount -f $i
 	done
 	lvremove -f $(pvdisplay $(echo $dispositivo"*") | grep "VG" | awk '{print $3}' | uniq)
-	dd if=/dev/zero of=$dispositivo bs=1024k count=1
-	partprobe $dispositivo
+	dd if=/dev/zero of="$dispositivo" bs=1024k count=1
+	partprobe "$dispositivo"
 	if [[ $(arch) = x86_64 ]] || [[ $(arch) = amd64 ]]; then
 		if [[ -f /sys/firmware/efi/runtime ]]; then
-			parted -s $dispositivo -- mklabel gpt
-			parted -a optimal -s $dispositivo -- mkpart primary fat32 3 260
-			parted $dispositivo set 1 esp on
-			mkfs.vfat -n BOOT -F 32 $(fdisk -l $dispositivo | grep "EFI" | awk '{print $1}')
+			parted -s "$dispositivo" -- mklabel gpt
+			parted -a optimal -s "$dispositivo" -- mkpart primary fat32 3 260
+			parted "$dispositivo" set 1 esp on
+			mkfs.vfat -n BOOT -F 32 $(fdisk -l "$dispositivo" | grep "EFI" | awk '{print $1}')
 			touch /tmp/efi
 		else
-			parted -s $dispositivo -- mklabel gpt
-			parted -a optimal -s $dispositivo -- mkpart non-fs 2 3
-			parted $dispositivo set 1 bios_grub on
-			parted -a optimal -s $dispositivo -- mkpart primary ext4 3 260
-			parted $dispositivo set 2 boot on
-			mkfs.ext4 -L boot -F $(fdisk -l $dispositivo | grep "EFI" | awk '{print $1}')
+			parted -s "$dispositivo" -- mklabel gpt
+			parted -a optimal -s "$dispositivo" -- mkpart non-fs 2 3
+			parted "$dispositivo" set 1 bios_grub on
+			parted -a optimal -s "$dispositivo" -- mkpart primary ext4 3 260
+			parted "$dispositivo" set 2 boot on
+			mkfs.ext4 -L boot -F $(fdisk -l "$dispositivo" | grep "EFI" | awk '{print $1}')
 		fi
 	else
-		parted -s $dispositivo -- mklabel msdos
-		parted -a optimal -s $dispositivo -- mkpart primary ext4 3 260
-		parted $dispositivo set 1 boot on
-		mkfs.ext4 -L boot -F $(fdisk -l $dispositivo | grep "Linux" | awk '{print $1}')
+		parted -s "$dispositivo" -- mklabel msdos
+		parted -a optimal -s "$dispositivo" -- mkpart primary ext4 3 260
+		parted "$dispositivo" set 1 boot on
+		mkfs.ext4 -L boot -F $(fdisk -l "$dispositivo" | grep "Linux" | awk '{print $1}')
 	fi
-	parted -a optimal -s $dispositivo -- mkpart primary linux-swap 260 1330
-	mkswap -L swap -f $(fdisk -l $dispositivo | grep "swap" | awk '{print $1}')
+	parted -a optimal -s "$dispositivo" -- mkpart primary linux-swap 260 1330
+	mkswap -L swap -f $(fdisk -l "$dispositivo" | grep "swap" | awk '{print $1}')
 }
 
 function milvm2 () {
-	parted -a optimal -s $dispositivo -- mkpart extended 1330 100%
-	parted -a optimal -s $dispositivo -- mkpart logic ext2 1331 100%
-	logica=$(parted -s $dispositivo -l | grep "1331" | awk '{print $1}')
+	parted -a optimal -s "$dispositivo" -- mkpart extended 1330 100%
+	parted -a optimal -s "$dispositivo" -- mkpart logic ext2 1331 100%
+	logica=$(parted -s "$dispositivo" -l | grep "1331" | awk '{print $1}')
 	pvcreate -ffy $(echo $dispositivo"$logica")
 	vgcreate -fy xanadu $(echo $dispositivo"$logica")
 	lvcreate -l 100%FREE -n root xanadu
-	partprobe $dispositivo
+	partprobe "$dispositivo"
 	mkfs.ext4 -F /dev/mapper/xanadu-root
-	touch $parti
+	touch "$parti"
 }
 
 function milvm3 () {
-	parted -a optimal -s $dispositivo -- mkpart non-fs 1331 100%
-	parted $dispositivo set 4 lvm on
-	casilvm=$(fdisk -l $dispositivo | grep "LVM" | awk '{print $1}')
-	pvcreate -ffy $casilvm
-	vgcreate -fy xanadu $casilvm
+	parted -a optimal -s "$dispositivo" -- mkpart non-fs 1331 100%
+	parted "$dispositivo" set 4 lvm on
+	casilvm=$(fdisk -l "$dispositivo" | grep "LVM" | awk '{print $1}')
+	pvcreate -ffy "$casilvm"
+	vgcreate -fy xanadu "$casilvm"
 	lvcreate -l 100%FREE -n root xanadu
-	partprobe $dispositivo
+	partprobe "$dispositivo"
 	mkfs.ext4 -F /dev/mapper/xanadu-root
-	touch $parti
+	touch "$parti"
 }
 
 function milvm () {
@@ -132,7 +135,7 @@ function milvm () {
 		exit 0
 	fi
 	dialogopart
-	if [[ $(parted -s $dispositivo -- print | grep "Partition" | awk '{print $3}') = msdos ]]; then
+	if [[ $(parted -s "$dispositivo" -- print | grep "Partition" | awk '{print $3}') = msdos ]]; then
 		milvm2 | $progreso $msgprt
 	else
 		milvm3 | $progreso $msgprt
@@ -140,23 +143,16 @@ function milvm () {
 }
 
 function miparticion2 () {
-	parted -a optimal -s $dispositivo -- mkpart primary ext4 1331 100%
-	partprobe $dispositivo
-	mkfs.ext4 -L root -F $(fdisk -l $dispositivo | grep "Sistema de ficheros de Linux" | awk '{print $1}')
-	touch $parti
+	parted -a optimal -s "$dispositivo" -- mkpart primary ext4 1331 100%
+	partprobe "$dispositivo"
+	mkfs.ext4 -L root -F $(fdisk -l "$dispositivo" | grep "Sistema de ficheros de Linux" | awk '{print $1}')
+	touch "$parti"
 }
 
 function miparticion () {
 	advert
 	dialogopart
 	miparticion2 | $progreso $msgprt
-}
-
-function parauser () {
-	echo "user ALL=(ALL) ALL" > /target/etc/sudoers.d/live
-	chroot /target adduser user sambashare
-	chroot /target chage -M 183 user
-	chmod -R 0700 /target/home/user/
 }
 
 function finalizando_1 () {
@@ -182,16 +178,20 @@ function finalizando_1 () {
 	sed -i 's_UMASK		022_UMASK	027_g' /target/etc/login.defs
 	sed -i 's_/bin/bash_/usr/bin/fish_g' /target/etc/passwd
 	echo "default-user-image=/usr/share/images/desktop-base/logo1.png" >> $greeter
+	echo "user ALL=(ALL) ALL" > /target/etc/sudoers.d/live
 	echo "umask 027" >> /target/etc/profile
 	echo "auth required pam_succeed_if.so user != root quiet" >> /target/etc/pam.d/lightdm
 	echo "proc /proc proc defaults,hidepid=2 0 0" >> $fspath
 	echo "tmpfs /run tmpfs rw,nosuid,async,noexec,nodev,noatime,mode=755 0 0" >> $fspath
 	echo "tmpfs /tmp tmpfs noatime,async,nosuid,noexec,nodev,rw 0 0" >> $fspath
 	echo "sshd : ALL" >> /target/etc/hosts.allow
-	echo 'DPkg::Post-Invoke {"echo Ejecutando prelink, espere...;/etc/cron.daily/prelink";}' > /target/etc/apt/apt.conf
-	if [[ $install = "simple" ]]; then
-		parauser
-	fi
+	echo 'DPkg::Post-Invoke {"echo Ejecutando prelink, espere...;/etc/cron.daily/prelink";};' > /target/etc/apt/apt.conf
+	echo 'DPkg::Post-Invoke {"ln -sf /usr/share/images/desktop-base/xanadu-wallpaper_1280x1024.svg /usr/share/images/desktop-base/joy-wallpaper_1280x1024.svg";};' >> /target/etc/apt/apt.conf
+	echo 'DPkg::Post-Invoke {"ln -sf /usr/share/images/desktop-base/xanadu-wallpaper_1280x1024.svg /etc/alternatives/desktop-background";};' >> /target/etc/apt/apt.conf
+	echo 'DPkg::Post-Invoke {"ln -sf /usr/share/images/desktop-base/xanadu-wallpaper_1280x1024.svg /usr/share/images/desktop-base/login-background.svg";};' >> /target/etc/apt/apt.conf
+	echo 'DPkg::Post-Invoke {"ln -sf /usr/share/images/desktop-base/xanadu-wallpaper_1280x1024.svg /usr/share/images/desktop-base/random/joy-wallpaper_1280x1024.svg";};' >> /target/etc/apt/apt.conf
+	echo 'DPkg::Post-Invoke {"ln -sf /usr/share/images/desktop-base/xanadu-grub.png /usr/share/images/desktop-base/joy-grub.png";};' >> /target/etc/apt/apt.conf
+	echo 'DPkg::Post-Invoke {"ln -sf usr/share/images/desktop-base/xanadu-grub.png /usr/share/images/desktop-base/desktop-grub.png";};' >> /target/etc/apt/apt.conf
 	if ! [[ -z $(fdisk -l | grep "swap" | awk '{print $1}') ]]; then
 		rm -f /target/swapfile
 		sed -i 's_/swapfile_#/swapfile_g' $fspath
@@ -287,11 +287,14 @@ function finalizando_1 () {
 	sed -i 's/GRUB_CMDLINE_LINUX_DEFAULT="quiet"/GRUB_CMDLINE_LINUX_DEFAULT="acpi_osi=Linux swapaccount=1 cgroup_enable=memory security=apparmor apparmor=1 panic=10 quiet '$i915 $elev'"/g' /target/etc/default/grub
 	chmod 0600 /target/etc/sudoers
 	chmod 0644 /target/usr/bin/lxpolkit
+	chmod -R 0700 /target/home/user/
 	chroot /target chmod -s /usr/bin/passwd
 	chroot /target chmod -s /usr/bin/wall
 	chroot /target chmod -s /bin/su
 	chroot /target groupadd -r fuse
+	chroot /target adduser user sambashare
 	chroot /target chage -M 365 root
+	chroot /target chage -M 183 user
 	chroot /target yes "" | sensors-detect
 	chroot /target iucode_tool --scan-system
 	chroot /target update-initramfs -u
@@ -299,8 +302,6 @@ function finalizando_1 () {
 	chroot /target systemctl enable systemd-readahead-collect 
 	chroot /target systemctl enable systemd-readahead-replay
 	chroot /target systemctl enable swapspace
-	chroot /target systemctl enable dnsmasq
-	chroot /target systemctl enable dnscrypt-proxy
 	chroot /target systemctl disable clamav-freshclam
 	chroot /target systemctl disable i2p
 	chroot /target systemctl disable memlockd
@@ -308,7 +309,9 @@ function finalizando_1 () {
 	chroot /target systemctl disable privoxy
 	chroot /target systemctl disable ssh
 	chroot /target systemctl disable tor
-	chroot /target apt -y remove xanadu-installer sysvinit xanadu-grubdoctor
+	chroot /target apt -y --allow-change-held-packages remove xanadu-installer
+	chroot /target apt -y remove sysvinit
+	chroot /target apt -y remove xanadu-grubdoctor
 }
 
 function loctimezone () {
@@ -356,9 +359,9 @@ if $(df | grep -q /target_home); then
 	umount -l /target_home/
 fi
 
-#if $(df | grep -q $home_dev); then
-#	umount $home_dev
-#fi
+if $(df | grep -q $home_dev); then
+	umount $home_dev
+fi
 
 if $(df | grep -q "\/dev\/mapper\/home_fs"); then
 	umount /dev/mapper/home_fs
@@ -447,7 +450,7 @@ function select_hostname () {
 	#test_hostname
 }
 
-cat > $rsync_excludes <<EOF
+cat > "$rsync_excludes" <<EOF
 
 - /dev/*
 - /cdrom/*
@@ -492,9 +495,9 @@ cat > $rsync_excludes <<EOF
 - /var/tmp/*
 
 EOF
-chmod 666 $rsync_excludes
+chmod 666 "$rsync_excludes"
 
-cat > $home_boot_excludes <<EOF
+cat > "$home_boot_excludes" <<EOF
 
 - *.gvfs
 - *.Xauthority
@@ -502,9 +505,9 @@ cat > $home_boot_excludes <<EOF
 - *.xsession-errors*
 
 EOF
-chmod 666 $home_boot_excludes
+chmod 666 "$home_boot_excludes"
 
-yad $miicono --center --text-align=fill --borders=6 --title="Instalar Xanadu GNU/Linux" --button="Instalacion simple":0 --button="Instalacion experta":1 --button="Salir":2 --text="
+yad $miicono --center --text-align=fill --borders=6 --title="Instalar Xanadu GNU/Linux $miver3" --button="Instalacion simple":0 --button="Instalacion experta":1 --button="Salir":2 --text="
 
  Esta aplicacion instalara Xanadu GNU/Linux en su equipo.
 
@@ -775,7 +778,7 @@ el sistema operativo"
 
 if [[ $install = "expert" ]]; then
 	if [[ $no_format = "yes" ]]; then 
-		fs_type_os=$(blkid -s TYPE $install_dev | awk -F"\"" '{ print $2 }')
+		fs_type_os=$(blkid -s TYPE "$install_dev" | awk -F"\"" '{ print $2 }')
 	else
 		if [[ $(cat /sys/block/$migrub/queue/rotational) = "0" ]]; then
 			$advertencia --text="Se ha detectado un disco SSD, se recomienda usar ext4 como sistema de archivos"
@@ -938,7 +941,7 @@ cleanup
 if [[ $write_random = "yes" ]]; then
 	if [[ $encrypt_os = "yes" ]]; then
        		exec 2>&1
-		dd if=/dev/urandom of=$install_dev
+		dd if=/dev/urandom of="$install_dev"
 		exec 2>>"$error_log"
 	fi  
 fi
@@ -946,7 +949,7 @@ fi
 if [[ $write_random = "yes" ]]; then
 	if [[ $encrypt_home = "yes" ]]; then
 		exec 2>&1
-		dd if=/dev/urandom of=$home_dev
+		dd if=/dev/urandom of="$home_dev"
 		exec 2>>"$error_log"
 	fi  
 fi
@@ -955,12 +958,12 @@ if [[ $write_zero = "yes" ]]; then
 	dd if=/dev/zero of="$install_dev"
 	if [[ $sep_home = "yes" ]]; then
 		exec 2>&1
-		dd if=/dev/zero of=$home_dev
+		dd if=/dev/zero of="$home_dev"
 		exec 2>>"$error_log"
 	fi
 	if [[ $sep_boot = "yes" ]]; then
 		exec 2>&1
-		dd if=/dev/zero of=$boot_dev
+		dd if=/dev/zero of="$boot_dev"
 		exec 2>>"$error_log"
 	fi
 fi
@@ -968,8 +971,8 @@ fi
 mkdir /target ;  check_exit
 
 if [[ $encrypt_os = yes ]]; then
-	cryptsetup luksFormat $install_dev ; check_exit
-	cryptsetup luksOpen $install_dev root_fs ; check_exit
+	cryptsetup luksFormat "$install_dev" ; check_exit
+	cryptsetup luksOpen "$install_dev" root_fs ; check_exit
 	install_part="/dev/mapper/root_fs"
 else
 	install_part="$install_dev"
@@ -980,22 +983,22 @@ if [[ $no_format != "yes" ]]; then
 		echo "1" > /dev/null
 	else
 		if [[ $fs_type_os = ext4 ]]; then
-			mkfs.ext4 -F $install_part ; check_exit
-			tune2fs -r 10000 $install_part ; check_exit
+			mkfs.$fs_type_os -F "$install_part" ; check_exit
+			tune2fs -r 10000 "$install_part" ; check_exit
 		else
-			mkfs.$fs_type_os -f $install_part ; check_exit
+			mkfs.$fs_type_os -f "$install_part" ; check_exit
 		fi
 	fi
 fi
 
-mount $install_part /target ; check_exit 
+mount "$install_part" /target ; check_exit 
 
 if [[ -n $home_dev ]]; then
 	mkdir /target_home ; check_exit
 	if [[ $encrypt_home = yes ]]; then
-		cryptsetup luksFormat $home_dev
+		cryptsetup luksFormat "$home_dev"
 		check_exit
-		cryptsetup luksOpen $home_dev home_fs
+		cryptsetup luksOpen "$home_dev" home_fs
 		check_exit
 		home_part="/dev/mapper/home_fs"
 	else
@@ -1003,13 +1006,13 @@ if [[ -n $home_dev ]]; then
 	fi
 	if [[ $no_format != "yes" ]]; then
 		if [[ $fs_type_os = ext4 ]]; then
-			mkfs.ext4 -F $home_part ; check_exit
-			tune2fs -r 10000 $home_part ; check_exit
+			mkfs.$fs_type_home -F "$home_part" ; check_exit
+			tune2fs -r 10000 "$home_part" ; check_exit
 		else
-			mkfs.$fs_type_home -f $home_part ; check_exit
+			mkfs.$fs_type_home -f "$home_part" ; check_exit
 		fi
 	fi
-	mount $home_part /target_home ; check_exit
+	mount "$home_part" /target_home ; check_exit
 	sep_home_opt="--exclude=/home/*"
 fi
 
@@ -1020,7 +1023,7 @@ if [[ -n $boot_dev ]]; then
 			echo "1" > /dev/null
 		else
 			if [[ $fs_type_os = ext4 ]]; then
-				mkfs.ext4 -F $boot_dev ; check_exit
+				mkfs.$fs_type_boot -F $boot_dev ; check_exit
 			else
 				mkfs.$fs_type_boot -f $boot_dev ; check_exit
 			fi
@@ -1033,14 +1036,14 @@ fi
 rsync -av / /target/ --exclude-from=$rsync_excludes ${sep_home_opt} ${sep_boot_opt} | tee >(yad $miicono --center --width=400 --fixed --progress --pulsate --auto-close --skip-taskbar --center --title=INSTALANDO --progress-text="Copiando el sistema a la nueva particion, por favor espere.")
 
 if ! [[ -z $home_dev ]]; then
-	rsync -av /home/ /target_home/ --exclude-from=$home_boot_excludes | tee >(yad $miicono --auto-close --progress --pulsate --width=350 --title="Copiando carpeta home a la nueva particion.")
+	rsync -av /home/ /target_home/ --exclude-from="$home_boot_excludes" | tee >(yad $miicono --auto-close --progress --pulsate --width=350 --title="Copiando carpeta home a la nueva particion.")
 fi
 
 if [[ -n $boot_dev ]]; then
-	rsync -av /boot/ /target_boot/ --exclude-from=$home_boot_excludes | tee >(yad $miicono --auto-close --progress --pulsate --width=350 --title="Copiando archivos a la particion boot.")
+	rsync -av /boot/ /target_boot/ --exclude-from="$home_boot_excludes" | tee >(yad $miicono --auto-close --progress --pulsate --width=350 --title="Copiando archivos a la particion boot.")
 fi
 
-dd if=/dev/zero of=/target/swapfile bs=$swapfile_blocksize count=$swapfile_count | \
+dd if=/dev/zero of=/target/swapfile bs="$swapfile_blocksize" count="$swapfile_count" | \
 tee >(yad $miicono --auto-close --progress --pulsate --width=350 --title="Creando un archivo swap...")
 mkswap /target/swapfile ; check_exit
 
@@ -1079,7 +1082,7 @@ if [[ $encrypt_os != "yes" ]]; then
 		else
 			rootfslabel=$(yad $miicono --center --entry --title="Etiqueta del Sistema de Archivos" --text="Enter a disk label for $install_dev" --width=300 --button="Aceptar":0)
 			if [[ -n $rootfslabel ]]; then
-				e2label $install_dev $rootfslabel
+				e2label "$install_dev"  "$rootfslabel"
 				install_part="LABEL=$rootfslabel"
 			else
 				install_part="$install_dev"
@@ -1112,7 +1115,7 @@ if ! [[ -z $home_dev ]]; then
 				else
 					homefslabel=$(yad $miicono --center --entry --title="Filesystem Label" --text="Enter a disk label for $home_dev" --width=300 --button="Aceptar":0)
 					if [[ -n $homefslabel ]]; then
-						e2label $home_dev $homefslabel
+						e2label "$home_dev"  "$homefslabel"
 						home_part="LABEL=$homefslabel"
 					else
 						home_part="$home_dev"
@@ -1144,7 +1147,7 @@ if [[ -n $boot_dev ]]; then
 			else
 				bootfslabel=$(yad $miicono --center --entry --title="Filesystem Label" --text="Enter a disk label for $boot_dev" --width=300 --button="Aceptar":0)
 				if [[ -n $bootfslabel ]]; then
-					e2label $boot_dev $bootfslabel
+					e2label "$boot_dev"  "$bootfslabel"
 					boot_part="LABEL=$bootfslabel"
 				else
 					boot_part="$boot_dev"
@@ -1231,54 +1234,6 @@ if [[ $change_user = "yes" ]]; then
 		sed -i "s/\/home\/$oldname/\/home\/$newname/g" "$i"
 	done
 	echo "$newname ALL=(ALL) ALL" > /target/etc/sudoers.d/live
-	chroot /target adduser $newname sambashare
-	chroot /target chage -M 183 $newname
-	grubuser=$(echo $newname)
-	function grubclave () {
-		miclave=$(yad --fixed --center --text-align=fill --borders=6 --title="Clave del Grub" --text="Introduzca una clave para el GRUB, debe ser diferente a la clave del usuario." --entry)
-		if [[ $? = 0 ]]; then
-			if ! [[ -z $miclave ]]; then
-				algrub=$(echo -e "$miclave""\n""$miclave" | grub-mkpasswd-pbkdf2 | awk '/grub.pbkdf/{print$NF}')
-				echo 'cat << EOF' >> /etc/grub.d/00_header
-				echo 'set superusers='$(echo '"'$grubuser'"') >> /etc/grub.d/00_header
-				echo 'password' $grubuser $algrub >> /etc/grub.d/00_header
-				echo 'EOF' >> /etc/grub.d/00_header
-				update-grub2
-			else
-				$errores --text="Debe introducir una contraseña"
-				grubclave
-			fi
-		fi
-
-	}
-	$advertencia --text="¿Desea colocar una clave al Grub?"
-	if [[ $? = 0 ]]; then
-		grubclave
-	fi
-else
-	parauser
-	grubuser="user"
-	function grubclave () {
-		miclave=$(yad --fixed --center --text-align=fill --borders=6 --title="Clave del Grub" --text="Introduzca una clave para el GRUB, debe ser diferente a la clave del usuario." --entry)
-		if [[ $? = 0 ]]; then
-			if ! [[ -z $miclave ]]; then
-				algrub=$(echo -e "$miclave""\n""$miclave" | grub-mkpasswd-pbkdf2 | awk '/grub.pbkdf/{print$NF}')
-				echo 'cat << EOF' >> /etc/grub.d/00_header
-				echo 'set superusers='$(echo '"'$grubuser'"') >> /etc/grub.d/00_header
-				echo 'password' $grubuser $algrub >> /etc/grub.d/00_header
-				echo 'EOF' >> /etc/grub.d/00_header
-				update-grub2
-			else
-				$errores --text="Debe introducir una contraseña"
-				grubclave
-			fi
-		fi
-
-	}
-	$advertencia --text="¿Desea colocar una clave al Grub?"
-	if [[ $? = 0 ]]; then
-		grubclave
-	fi
 fi
 
 if [[ $change_user = "yes" ]]; then
@@ -1303,7 +1258,7 @@ if [[ $edit_sudoers = "yes" ]]; then
 		ans="$?"
 	if [[ $ans = "0" ]]; then
 		if [[ -n $newname ]]; then
-			sed -i~ '/sudo-mode/s/true/false/' /target/home/$newname/.gconf/apps/gksu/%gconf.xml
+			sed -i~ '/sudo-mode/s/true/false/' /target/home/"$newname"/.gconf/apps/gksu/%gconf.xml
 		else
 			sed -i~ '/sudo-mode/s/true/false/' /target/home/user/.gconf/apps/gksu/%gconf.xml
 		fi
@@ -1325,14 +1280,14 @@ if [[ $change_user = "yes" ]]; then
 		ans="$?"
 	if [[ $ans = 0 ]]; then
 		exec 2>&1
-		chroot /target passwd $newname
+		chroot /target passwd "$newname"
 		exec 2>>"$error_log"
 	fi
 fi
 
 finalizando_1
 
-cp $error_log /target/var/log/
+cp "$error_log" /target/var/log/
 cleanup
 
 yad $miicono --image=gtk-dialog-info --timeout 10 --fixed --center --width=500 --title="Instalador" --text-align=fill --borders=6 --button="Apagar":0 --button="Reiniciar":1 --button="Salir":2 --text=" Instalacion completa. \n\n Durante el primer inicio es posible que el sistema se reinicie automaticamente.\n\n Ejecute el post-instalador luego del primer inicio de su sistema.\n"
