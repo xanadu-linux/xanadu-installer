@@ -1,4 +1,28 @@
-commit 0fd611f4b32a92a911be3857454d19ec0af8bdfe (HEAD, origin/master, origin/HEAD, master)
+commit 9d1ba7ab28c09bbf1d9368cd2b3b440961f52557 (HEAD, origin/master, origin/HEAD, master)
+Author: jose perez <sinfallas@gmail.com>
+Date:   Thu Apr 7 14:48:56 2016 -0430
+
+    * se coloca la version
+
+commit ba2dad5d22954e7214ca6f7928889c94aa65257b
+Author: jose perez <sinfallas@gmail.com>
+Date:   Thu Apr 7 14:47:40 2016 -0430
+
+    * bugfix
+
+commit 3a799286c7fd271460381d6b7c9c09f4ebe64570
+Author: jose perez <sinfallas@gmail.com>
+Date:   Thu Apr 7 14:46:33 2016 -0430
+
+    * se muestra el numero de la version de xanadu en el titulo de la primera pantalla
+
+commit 53e9b7a04c1a3dba024b774b1ec415401fcd3430 (tag: v0.4)
+Author: jose perez <sinfallas@gmail.com>
+Date:   Tue Apr 5 20:41:40 2016 -0430
+
+    * changelog
+
+commit 0fd611f4b32a92a911be3857454d19ec0af8bdfe
 Author: jose perez <sinfallas@gmail.com>
 Date:   Tue Apr 5 20:41:23 2016 -0430
 
