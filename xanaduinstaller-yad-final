@@ -717,7 +717,7 @@ if ! [[ -f "$parti" ]]; then
 fi
 
 if [[ -f "$parti" ]]; then
-	boot_dev=$(blkid -c /dev/null | grep "boot" | awk '{print $1}' | sed 's/.$//g')
+	boot_dev=$(blkid -c /dev/null | grep -i "boot" | awk '{print $1}' | sed 's/.$//g')
 else
 	if [[ $sep_boot = "yes" ]]; then
 		choose_boot
