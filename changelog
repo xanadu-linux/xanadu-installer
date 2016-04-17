@@ -1,4 +1,16 @@
-commit 024bc6e4863f69f5895c11c0215b29f0c1a07179 (HEAD, origin/master, origin/HEAD, master)
+commit 375345ebd6c6b5a8d97ca7fb20269629a5fc568d (HEAD, origin/master, origin/HEAD, master)
+Author: jose perez <sinfallas@gmail.com>
+Date:   Sun Apr 17 19:28:29 2016 -0430
+
+    * se coloca un timeout en la pantala de clave del grub
+
+commit 40d5fa16acabbad995e26341a5084250d0b52344
+Author: jose perez <sinfallas@gmail.com>
+Date:   Sun Apr 17 13:41:16 2016 -0430
+
+    * changelog
+
+commit 024bc6e4863f69f5895c11c0215b29f0c1a07179
 Author: jose perez <sinfallas@gmail.com>
 Date:   Sun Apr 17 13:37:54 2016 -0430
 
