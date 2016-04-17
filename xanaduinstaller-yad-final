@@ -51,6 +51,8 @@ else
 	cpu3="<span color='#00b300'>$cpu2</span>"
 fi
 rm -f $parti
+rm -f $rsync_excludes
+rm -f $home_boot_excludes
 exec 2>"$error_log"
 
 function advert () {
