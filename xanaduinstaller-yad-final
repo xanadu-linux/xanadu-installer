@@ -1193,8 +1193,7 @@ if [[ -n $grub_partition ]]; then
 		root $GRUBROOT
 		setup $GRUBROOT
 		quit
-EOF
-
+		EOF
 	else
 		error_message="grub-install failed."
 		chroot /target /bin/bash grub-install --recheck --no-floppy --force $grub_partition >> "$error_log" ; check_exit
