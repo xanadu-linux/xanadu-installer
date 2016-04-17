@@ -1,4 +1,22 @@
-commit ea42d0c45abffbcc3f8cbc0f94177fabceaf8fb0 (HEAD, origin/master, origin/HEAD, master)
+commit 48d2ffa48b34d975d3314993a274ff5c67141bc6 (HEAD, origin/master, origin/HEAD, master)
+Author: jose perez <sinfallas@gmail.com>
+Date:   Sun Apr 17 12:43:35 2016 -0430
+
+    * se agrega un parametro para hacer grep en la seleccion del boot, case insensitive
+
+commit 14ddd77ca068d8235b1a2314d6ffc3c8a7679d9a
+Author: jose perez <sinfallas@gmail.com>
+Date:   Sun Apr 17 12:41:40 2016 -0430
+
+    * se eliminan archivos que puedan quedar de ejecuciones anteriores
+
+commit 651f62311301faba84f1018d677e04a174ac88a5
+Author: jose perez <sinfallas@gmail.com>
+Date:   Sat Apr 9 11:32:06 2016 -0430
+
+    * changelog
+
+commit ea42d0c45abffbcc3f8cbc0f94177fabceaf8fb0
 Author: jose perez <sinfallas@gmail.com>
 Date:   Sat Apr 9 11:31:55 2016 -0430
 
