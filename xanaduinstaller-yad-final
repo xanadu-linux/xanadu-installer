@@ -1255,7 +1255,7 @@ if [[ $change_user = "yes" ]]; then
 		fi
 
 	}
-	$advertencia --text="¿Desea colocar una clave al Grub?"
+	$advertencia --timeout 5 --text="¿Desea colocar una clave al Grub?"
 	if [[ $? = 0 ]]; then
 		grubclave
 	fi
@@ -1279,7 +1279,7 @@ else
 		fi
 
 	}
-	$advertencia --text="¿Desea colocar una clave al Grub?"
+	$advertencia --timeout 5 --text="¿Desea colocar una clave al Grub?"
 	if [[ $? = 0 ]]; then
 		grubclave
 	fi
