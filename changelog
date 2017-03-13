@@ -1,10 +1,28 @@
-commit 3e9139af0dffd0fd04340f84533b86c95e6fed5d (HEAD, origin/master, origin/HEAD, master)
+commit 57ebf81ff95d294d2876472604eab87359b6af95 (HEAD, origin/master, origin/HEAD, master)
+Author: jose perez <sinfallas@gmail.com>
+Date:   Mon Mar 13 17:53:37 2017 -0400
+
+    * si se detectan mas de 4 GB de ram se activa la aceleracion por hardware en Firefox de lo contrario se desactiva
+
+commit ae8341ed279b95452892c9520c31a2d0f6c51c26
+Author: Jose Perez <sinfallas@users.noreply.github.com>
+Date:   Tue Apr 19 20:21:34 2016 -0430
+
+    Update README.md
+
+commit 47dae3aa48556f8f2ceb9e8835953f0f6a948b75
+Author: jose perez <sinfallas@gmail.com>
+Date:   Sun Apr 17 21:17:52 2016 -0430
+
+    * changelog
+
+commit 3e9139af0dffd0fd04340f84533b86c95e6fed5d
 Author: jose perez <sinfallas@gmail.com>
 Date:   Sun Apr 17 21:17:40 2016 -0430
 
     * zenodo
 
-commit f029ec1948655822f6fa7661086838a8bc7694f4
+commit f029ec1948655822f6fa7661086838a8bc7694f4 (tag: v0.4.1)
 Author: jose perez <sinfallas@gmail.com>
 Date:   Sun Apr 17 19:28:56 2016 -0430
 
