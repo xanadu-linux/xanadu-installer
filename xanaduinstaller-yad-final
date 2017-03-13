@@ -193,7 +193,7 @@ function finalizando_1 () {
 	echo "tmpfs /run tmpfs rw,nosuid,async,noexec,nodev,noatime,mode=755 0 0" >> $fspath
 	echo "tmpfs /tmp tmpfs noatime,async,nosuid,noexec,nodev,rw 0 0" >> $fspath
 	echo "sshd : ALL" >> /target/etc/hosts.allow
-	echo 'DPkg::Post-Invoke {"echo Ejecutando prelink, espere...;/etc/cron.daily/prelink";}' > /target/etc/apt/apt.conf
+	echo 'DPkg::Post-Invoke {"echo Optimizando, espere...;/usr/bin/post-apt";}' > /target/etc/apt/apt.conf
 	if [[ $install = "simple" ]]; then
 		parauser
 	fi
@@ -261,6 +261,10 @@ function finalizando_1 () {
 	fi
 	if (( $memoria > 4096000 )); then
 		echo "tmpfs /var/cache/apt/archives tmpfs noatime,async,nodev 0 0" >> $fspath
+		echo 'pref("gfx.xrender.enabled",true);' >> /target/etc/firefox/prefs.js
+		echo 'pref("layers.acceleration.force-enabled",true);' >> /target/etc/firefox/prefs.js
+		echo 'pref("gfx.xrender.enabled",true);' >> /target/etc/firefox/prefs.tor
+		echo 'pref("layers.acceleration.force-enabled",true);' >> /target/etc/firefox/prefs.tor
 		yad --skip-taskbar --fixed --center --text-align=fill --borders=6 --button=Aceptar:0 --button=Cancelar:1 --title=Finalizando --text="¿Desea activar fail2ban, psad y aide? (No se recomienda si tiene menos de 4 GB de RAM)"
 		if [[ $? = 0 ]]; then
 			chroot /target systemctl enable ntp
@@ -273,6 +277,11 @@ function finalizando_1 () {
 			chroot /target systemctl disable fail2ban
 			chroot /target systemctl disable psad
 		fi
+	else
+		echo 'pref("gfx.xrender.enabled",false);' >> /target/etc/firefox/prefs.js
+		echo 'pref("layers.acceleration.force-enabled",false);' >> /target/etc/firefox/prefs.js
+		echo 'pref("gfx.xrender.enabled",false);' >> /target/etc/firefox/prefs.tor
+		echo 'pref("layers.acceleration.force-enabled",false);' >> /target/etc/firefox/prefs.tor
 	fi
 	if [[ $(cat /sys/block/$migrub/queue/rotational) = "0" ]]; then
 		if ! [[ -z $(hdparm -I $migrub | grep "TRIM supported") ]]; then
