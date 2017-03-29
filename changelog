@@ -1,4 +1,16 @@
-commit 57ebf81ff95d294d2876472604eab87359b6af95 (HEAD, origin/master, origin/HEAD, master)
+commit 8475d263626961a77ca08df96101b8fbf4870782 (HEAD, origin/master, origin/HEAD, master)
+Author: jose perez <sinfallas@gmail.com>
+Date:   Wed Mar 29 13:08:44 2017 -0400
+
+    * se elimina una referencia a i2p
+
+commit f1ea3e692049fc9368b2b93e1810792b7efa9fc4
+Author: jose perez <sinfallas@gmail.com>
+Date:   Mon Mar 13 17:54:34 2017 -0400
+
+    * changelog
+
+commit 57ebf81ff95d294d2876472604eab87359b6af95
 Author: jose perez <sinfallas@gmail.com>
 Date:   Mon Mar 13 17:53:37 2017 -0400
 
