@@ -14,7 +14,6 @@ fi
 
 trap "rm -f /run/$(basename $0).pid; exit" 0 1 2 3 15
 echo "$BASHPID" > /run/"$(basename $0)".pid
-
 advertencia='yad --center --skip-taskbar --fixed --text-align=fill --borders=6 --button=Aceptar:0 --button=Salir:1 --title=Advertencia'
 cpu=$(lscpu | grep "MHz" | awk '{print $3}')
 cpu2=${cpu%.*}
@@ -46,7 +45,6 @@ trimf="/target/etc/cron.daily/trim"
 xfspath="/target/etc/sysctl.d/12-xfs.conf"
 x11path="/target/etc/X11/xorg.conf"
 x11opt="/usr/share/x11/xorg.conf.d"
-
 if (( $memoria < 512000 )); then
 	memoria2="<span color='#ff0000'>$memoria</span>"
 else
