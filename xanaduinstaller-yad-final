@@ -14,32 +14,39 @@ fi
 
 trap "rm -f /run/$(basename $0).pid; exit" 0 1 2 3 15
 echo "$BASHPID" > /run/"$(basename $0)".pid
-error_log="/var/log/installer_error.log"
-miicono="--window-icon=/usr/share/icons/install-icon.png"
-rsync_excludes="/tmp/installer_exclude.list"
-home_boot_excludes="/tmp/home_boot_exclude.list"
-parti="/tmp/particionador"
-xfspath="/target/etc/sysctl.d/12-xfs.conf"
-x11path="/target/etc/X11/xorg.conf"
-x11opt="/usr/share/x11/xorg.conf.d"
-fspath="/target/etc/fstab"
-light="/target/etc/lightdm/lightdm.conf"
-greeter="/target/etc/lightdm/lightdm-gtk-greeter.conf"
-swapfile_blocksize="1024"
-swapfile_count="262144"
-pmount_fixed="no"
-fs_type_boot="ext4"
-msgprt='--progress-text=Creando particiones, por favor espere... --title=Particionando'
+
 advertencia='yad --center --skip-taskbar --fixed --text-align=fill --borders=6 --button=Aceptar:0 --button=Salir:1 --title=Advertencia'
-errores='yad --center --skip-taskbar --fixed --title=Error --window-icon=error --text-align=fill --borders=6'
-progreso='yad --center --fixed --progress --pulsate --auto-close --skip-taskbar'
-grubversion=$(dpkg -l | grep -v bin | grep -v doc | awk '$2 ~ "grub-[pc]" {print $2}' | grep -v amd64 | grep -v i386 | grep -v common)
-memoria=$(grep "MemTotal" /proc/meminfo | awk '{print $2}')
 cpu=$(lscpu | grep "MHz" | awk '{print $3}')
 cpu2=${cpu%.*}
+error_log="/var/log/installer_error.log"
+errores='yad --center --skip-taskbar --fixed --title=Error --window-icon=error --text-align=fill --borders=6'
+firefoxp="/target/etc/firefox/prefs.js"
+firefoxt="/target/etc/firefox/prefs.tor"
+fspath="/target/etc/fstab"
+fs_type_boot="ext4"
+greeter="/target/etc/lightdm/lightdm-gtk-greeter.conf"
+grubversion=$(dpkg -l | grep -v bin | grep -v doc | awk '$2 ~ "grub-[pc]" {print $2}' | grep -v amd64 | grep -v i386 | grep -v common)
+home_boot_excludes="/tmp/home_boot_exclude.list"
+light="/target/etc/lightdm/lightdm.conf"
+mapperr="/dev/mapper/xanadu-root"
+memoria=$(grep "MemTotal" /proc/meminfo | awk '{print $2}')
+miicono="--window-icon=/usr/share/icons/install-icon.png"
 miver=$(cat /etc/os-release | grep "VERSION_ID" | cut -d "=" -f2)
 mive=${miver#'"'}
 miver3=${mive%'"'}
+msgprt='--progress-text=Creando particiones, por favor espere... --title=Particionando'
+parti="/tmp/particionador"
+pmount_fixed="no"
+progreso='yad --center --fixed --progress --pulsate --auto-close --skip-taskbar'
+rsync_excludes="/tmp/installer_exclude.list"
+serverf="30-serverflags.conf"
+swapfile_blocksize="1024"
+swapfile_count="262144"
+trimf="/target/etc/cron.daily/trim"
+xfspath="/target/etc/sysctl.d/12-xfs.conf"
+x11path="/target/etc/X11/xorg.conf"
+x11opt="/usr/share/x11/xorg.conf.d"
+
 if (( $memoria < 512000 )); then
 	memoria2="<span color='#ff0000'>$memoria</span>"
 else
@@ -114,7 +121,7 @@ function milvm2 () {
 	vgcreate -fy xanadu $(echo $dispositivo"$logica")
 	lvcreate -l 100%FREE -n root xanadu
 	partprobe $dispositivo
-	mkfs.ext4 -F /dev/mapper/xanadu-root
+	mkfs.ext4 -F $mapperr
 	touch $parti
 }
 
@@ -126,7 +133,7 @@ function milvm3 () {
 	vgcreate -fy xanadu $casilvm
 	lvcreate -l 100%FREE -n root xanadu
 	partprobe $dispositivo
-	mkfs.ext4 -F /dev/mapper/xanadu-root
+	mkfs.ext4 -F $mapperr
 	touch $parti
 }
 
@@ -161,7 +168,11 @@ function parauser () {
 	echo "user ALL=(ALL) ALL" > /target/etc/sudoers.d/live
 	chroot /target adduser user sambashare
 	chroot /target chage -M 183 user
-	chmod -R 0700 /target/home/user/
+	if [[ -n $newname ]]; then
+		chmod -R 0700 /target/home/$newname/
+	else
+		chmod -R 0700 /target/home/user/
+	fi
 }
 
 function finalizando_1 () {
@@ -220,26 +231,26 @@ function finalizando_1 () {
 		echo ' Option "EXAOptimizeMigration" "true"' >> $x11path
 		echo ' Option "MigrationHeuristic" "greedy"' >> $x11path
 		echo 'EndSection' >> $x11path
-		echo 'Section "DRI"' > $x11opt/30-serverflags.conf
-		echo ' Mode 0660' >> $x11opt/30-serverflags.conf
-		echo 'EndSection' >> $x11opt/30-serverflags.conf
-		echo 'Section "Extensions"' >> $x11opt/30-serverflags.conf
-		echo ' Option "Composite" "Enable"' >> $x11opt/30-serverflags.conf
-		echo ' Option "RENDER" "Enable"' >> $x11opt/30-serverflags.conf
-		echo ' Option "DAMAGE" "Enable"' >> $x11opt/30-serverflags.conf
-		echo 'EndSection' >> $x11opt/30-serverflags.conf
-		echo 'Section "ServerFlags"' >> $x11opt/30-serverflags.conf
-		echo ' Option "AllowGLXWithComposite" "true"' >> $x11opt/30-serverflags.conf
-		echo ' Option "XAANoOffscreenPixmaps" "true"' >> $x11opt/30-serverflags.conf
-		echo ' Option "AddARGBGLXVisuals" "True"' >> $x11opt/30-serverflags.conf
-		echo ' Option "RandR" "on"' >> $x11opt/30-serverflags.conf
-		echo ' Option "RENDER" "on"' >> $x11opt/30-serverflags.conf
-		echo ' Option "DRI2" "True"' >> $x11opt/30-serverflags.conf
-		echo ' Option "GlxVisuals" "all"' >> $x11opt/30-serverflags.conf
-		echo ' Option "AutoAddDevices" "True"' >> $x11opt/30-serverflags.conf
-		echo ' Option "AutoEnableDevices" "True"' >> $x11opt/30-serverflags.conf
-		echo ' Option "AllowEmptyInput" "False"' >> $x11opt/30-serverflags.conf
-		echo 'EndSection' >> $x11opt/30-serverflags.conf
+		echo 'Section "DRI"' > $x11opt/$serverf
+		echo ' Mode 0660' >> $x11opt/$serverf
+		echo 'EndSection' >> $x11opt/$serverf
+		echo 'Section "Extensions"' >> $x11opt/$serverf
+		echo ' Option "Composite" "Enable"' >> $x11opt/$serverf
+		echo ' Option "RENDER" "Enable"' >> $x11opt/$serverf
+		echo ' Option "DAMAGE" "Enable"' >> $x11opt/$serverf
+		echo 'EndSection' >> $x11opt/$serverf
+		echo 'Section "ServerFlags"' >> $x11opt/$serverf
+		echo ' Option "AllowGLXWithComposite" "true"' >> $x11opt/$serverf
+		echo ' Option "XAANoOffscreenPixmaps" "true"' >> $x11opt/$serverf
+		echo ' Option "AddARGBGLXVisuals" "True"' >> $x11opt/$serverf
+		echo ' Option "RandR" "on"' >> $x11opt/$serverf
+		echo ' Option "RENDER" "on"' >> $x11opt/$serverf
+		echo ' Option "DRI2" "True"' >> $x11opt/$serverf
+		echo ' Option "GlxVisuals" "all"' >> $x11opt/$serverf
+		echo ' Option "AutoAddDevices" "True"' >> $x11opt/$serverf
+		echo ' Option "AutoEnableDevices" "True"' >> $x11opt/$serverf
+		echo ' Option "AllowEmptyInput" "False"' >> $x11opt/$serverf
+		echo 'EndSection' >> $x11opt/$serverf
 	fi
 	if [[ $fs_type_os = "xfs" ]]; then
 		echo "fs.xfs.age_buffer_centisecs = 1500" > $xfspath
@@ -261,10 +272,10 @@ function finalizando_1 () {
 	fi
 	if (( $memoria > 4096000 )); then
 		echo "tmpfs /var/cache/apt/archives tmpfs noatime,async,nodev 0 0" >> $fspath
-		echo 'pref("gfx.xrender.enabled",true);' >> /target/etc/firefox/prefs.js
-		echo 'pref("layers.acceleration.force-enabled",true);' >> /target/etc/firefox/prefs.js
-		echo 'pref("gfx.xrender.enabled",true);' >> /target/etc/firefox/prefs.tor
-		echo 'pref("layers.acceleration.force-enabled",true);' >> /target/etc/firefox/prefs.tor
+		echo 'pref("gfx.xrender.enabled",true);' >> $firefoxp
+		echo 'pref("layers.acceleration.force-enabled",true);' >> $firefoxp
+		echo 'pref("gfx.xrender.enabled",true);' >> $firefoxt
+		echo 'pref("layers.acceleration.force-enabled",true);' >> $firefoxt
 		yad --skip-taskbar --fixed --center --text-align=fill --borders=6 --button=Aceptar:0 --button=Cancelar:1 --title=Finalizando --text="¿Desea activar fail2ban, psad y aide? (No se recomienda si tiene menos de 4 GB de RAM)"
 		if [[ $? = 0 ]]; then
 			chroot /target systemctl enable ntp
@@ -278,20 +289,20 @@ function finalizando_1 () {
 			chroot /target systemctl disable psad
 		fi
 	else
-		echo 'pref("gfx.xrender.enabled",false);' >> /target/etc/firefox/prefs.js
-		echo 'pref("layers.acceleration.force-enabled",false);' >> /target/etc/firefox/prefs.js
-		echo 'pref("gfx.xrender.enabled",false);' >> /target/etc/firefox/prefs.tor
-		echo 'pref("layers.acceleration.force-enabled",false);' >> /target/etc/firefox/prefs.tor
+		echo 'pref("gfx.xrender.enabled",false);' >> $firefoxp
+		echo 'pref("layers.acceleration.force-enabled",false);' >> $firefoxp
+		echo 'pref("gfx.xrender.enabled",false);' >> $firefoxt
+		echo 'pref("layers.acceleration.force-enabled",false);' >> $firefoxt
 	fi
 	if [[ $(cat /sys/block/$migrub/queue/rotational) = "0" ]]; then
 		if ! [[ -z $(hdparm -I $migrub | grep "TRIM supported") ]]; then
-			echo "#!/usr/bin/env bash" > /target/etc/cron.daily/trim
-			echo 'echo "*** $(date -R) ***" >> /var/log/trim.log' >> /target/etc/cron.daily/trim
-			echo "fstrim -v / >> /var/log/trim.log" >> /target/etc/cron.daily/trim
+			echo "#!/usr/bin/env bash" > $trimf
+			echo 'echo "*** $(date -R) ***" >> /var/log/trim.log' >> $trimf
+			echo "fstrim -v / >> /var/log/trim.log" >> $trimf
 			if ! [[ -z $(hdparm -I $home_dev | grep "TRIM supported") ]]; then
-				echo "fstrim -v /home >> /var/log/trim.log" >> /target/etc/cron.daily/trim
+				echo "fstrim -v /home >> /var/log/trim.log" >> $trimf
 			fi
-			chmod +x /target/etc/cron.daily/trim
+			chmod +x $trimf
 		fi
 		elev="elevator=noop"
 	fi
@@ -408,13 +419,6 @@ fi
 if [[ -d /target_boot ]]; then
 	rm -rf /target_boot
 fi
-
-rm -rf /target/tmp/*
-rm -rf /target/var/tmp/*
-rm -rf /target/var/cache/polipo/*
-rm -rf /target/root/.local/share/Trash/*
-rm -rf /target/home/*/.local/share/Trash/*
-rm -rf /target/home/*/.mozilla/firefox/*/*Cache*
 }
 
 function preinstall () {
