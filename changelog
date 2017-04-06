@@ -1,4 +1,35 @@
-commit 8475d263626961a77ca08df96101b8fbf4870782 (HEAD, origin/master, origin/HEAD, master)
+commit 5503151da499c6b0cef4bfd715c7fa0a48814799 (HEAD, origin/master, origin/HEAD, master)
+Author: jose perez <sinfallas@gmail.com>
+Date:   Thu Apr 6 11:19:06 2017 -0400
+
+    * bugfix
+
+commit ee11b84a2299911a2e371a74bb9e2febb3c99674
+Author: jose perez <sinfallas@gmail.com>
+Date:   Thu Apr 6 11:18:35 2017 -0400
+
+    * bugfix
+
+commit 0b7a2026db9a4b618543941719f03c9c4c4c1a26
+Author: jose perez <sinfallas@gmail.com>
+Date:   Thu Apr 6 11:14:23 2017 -0400
+
+    * bugfix
+
+commit 1bc89739913652592ec83a72907a066a977a766c
+Author: jose perez <sinfallas@gmail.com>
+Date:   Thu Apr 6 11:11:58 2017 -0400
+
+    * se cambian rutas absolutas por variables
+    * se elimina codigo duplicado
+
+commit 7cdef17340127f02cebcccb9ec1dfed4d2cb2f90
+Author: jose perez <sinfallas@gmail.com>
+Date:   Wed Mar 29 13:09:16 2017 -0400
+
+    * changelog
+
+commit 8475d263626961a77ca08df96101b8fbf4870782
 Author: jose perez <sinfallas@gmail.com>
 Date:   Wed Mar 29 13:08:44 2017 -0400
 
