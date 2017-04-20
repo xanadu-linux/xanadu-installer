@@ -1,4 +1,17 @@
-commit dbcd38634494e72e979c4c550d08ac81eff85941 (HEAD, origin/master, origin/HEAD, master)
+commit 1697f3e7551744518e16f4d1c6d979d7127a5d4a (HEAD, origin/master, origin/HEAD, master)
+Author: jose perez <sinfallas@gmail.com>
+Date:   Thu Apr 20 15:57:39 2017 -0400
+
+    * se optimiza la funcion grubclave
+    * se activa discard bajo LVM solo si el disco es SSD
+
+commit 8ebba57f7a63d0d1f0da2416eb6bbe02b927c386
+Author: jose perez <sinfallas@gmail.com>
+Date:   Thu Apr 20 12:11:31 2017 -0400
+
+    * changelog
+
+commit dbcd38634494e72e979c4c550d08ac81eff85941
 Author: jose perez <sinfallas@gmail.com>
 Date:   Thu Apr 20 12:10:20 2017 -0400
 
