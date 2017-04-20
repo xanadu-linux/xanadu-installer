@@ -147,6 +147,7 @@ function milvm () {
 	else
 		milvm3 | $progreso $msgprt
 	fi
+	eslvm="1"
 }
 
 function miparticion2 () {
@@ -170,6 +171,23 @@ function parauser () {
 		chmod -R 0700 /target/home/$newname/
 	else
 		chmod -R 0700 /target/home/user/
+	fi
+}
+
+function grubclave () {
+	miclave=$(yad --fixed --center --text-align=fill --borders=6 --title="Clave del Grub" --text="Introduzca una clave para el GRUB, debe ser diferente a la clave del usuario." --entry)
+	if [[ $? = 0 ]]; then
+		if ! [[ -z $miclave ]]; then
+			algrub=$(echo -e "$miclave""\n""$miclave" | grub-mkpasswd-pbkdf2 | awk '/grub.pbkdf/{print$NF}')
+			echo 'cat << EOF' >> /target/etc/grub.d/00_header
+			echo 'set superusers='$(echo '"'$grubuser'"') >> /target/etc/grub.d/00_header
+			echo 'password' $grubuser $algrub >> /target/etc/grub.d/00_header
+			echo 'EOF' >> /target/etc/grub.d/00_header
+			chroot /target update-grub2
+		else
+			$errores --text="Debe introducir una contraseña"
+			grubclave
+		fi
 	fi
 }
 
@@ -301,6 +319,9 @@ function finalizando_1 () {
 				echo "fstrim -v /home >> /var/log/trim.log" >> $trimf
 			fi
 			chmod +x $trimf
+		fi
+		if [[ $eslvm = "1" ]]; then
+			sed -i 's/issue_discards = 0/issue_discards = 1/g' /target/etc/lvm/lvm.conf
 		fi
 		elev="elevator=noop"
 	fi
@@ -1105,8 +1126,18 @@ if [[ $encrypt_os != "yes" ]]; then
 	fi
 fi
 
+if [[ $(cat /sys/block/$migrub/queue/rotational) = "0" ]]; then
+	if [[ $eslvm = "1" ]]; then
+		descartar="1"
+	fi
+fi
+
 if [[ $fs_type_os = ext4 ]]; then
-	echo -e "$install_part\t/\t$fs_type_os\tdefaults,noatime,nodelalloc,commit=60,inode_readahead_blks=64,errors=remount-ro\t0\t1" > $fspath
+	if [[ $descartar = "1" ]]; then
+		echo -e "$install_part\t/\t$fs_type_os\tdefaults,discard,noatime,nodelalloc,commit=60,inode_readahead_blks=64,errors=remount-ro\t0\t1" > $fspath
+	else
+		echo -e "$install_part\t/\t$fs_type_os\tdefaults,noatime,nodelalloc,commit=60,inode_readahead_blks=64,errors=remount-ro\t0\t1" > $fspath
+	fi
 else
 	if [[ $fs_type_os = xfs ]]; then
 		echo -e "$install_part\t/\t$fs_type_os\tdefaults,rw,noatime,relatime,attr2,nobarrier,logbufs=8,largeio,inode64\t0\t1" > $fspath
@@ -1138,7 +1169,11 @@ if ! [[ -z $home_dev ]]; then
 		fi
 	fi
 	if [[ $fs_type_home = ext4 ]]; then
-		echo -e "$home_part\t/home\t$fs_type_home\tdefaults,noatime,nodelalloc,commit=60,inode_readahead_blks=64,errors=remount-ro\t0\t3" >> $fspath
+		if [[ $descartar = "1" ]]; then
+			echo -e "$home_part\t/home\t$fs_type_home\tdefaults,discard,noatime,nodelalloc,commit=60,inode_readahead_blks=64,errors=remount-ro\t0\t3" >> $fspath
+		else
+			echo -e "$home_part\t/home\t$fs_type_home\tdefaults,noatime,nodelalloc,commit=60,inode_readahead_blks=64,errors=remount-ro\t0\t3" >> $fspath
+		fi
 	else
 		if [[ $fs_type_home = xfs ]]; then
 			echo -e "$home_part\t/home\t$fs_type_home\tdefaults,rw,noatime,relatime,attr2,nobarrier,logbufs=8,largeio,inode64\t0\t3" >> $fspath
@@ -1169,7 +1204,11 @@ if [[ -n $boot_dev ]]; then
 		boot_part="$boot_dev"
 	fi
 	if [[ $fs_type_boot = ext4 ]]; then
-		echo -e "$boot_part\t/boot\t$fs_type_boot\tdefaults,noatime,errors=remount-ro\t0\t2" >> $fspath
+		if [[ $descartar = "1" ]]; then
+			echo -e "$boot_part\t/boot\t$fs_type_boot\tdefaults,discard,noatime,errors=remount-ro\t0\t2" >> $fspath
+		else
+			echo -e "$boot_part\t/boot\t$fs_type_boot\tdefaults,noatime,errors=remount-ro\t0\t2" >> $fspath
+		fi
 	else
 		echo -e "$boot_part\t/boot\t$fs_type_boot\tdefaults\t0\t2" >> $fspath
 	fi
@@ -1248,23 +1287,6 @@ if [[ $change_user = "yes" ]]; then
 	chroot /target adduser $newname sambashare
 	chroot /target chage -M 183 $newname
 	grubuser=$(echo $newname)
-	function grubclave () {
-		miclave=$(yad --fixed --center --text-align=fill --borders=6 --title="Clave del Grub" --text="Introduzca una clave para el GRUB, debe ser diferente a la clave del usuario." --entry)
-		if [[ $? = 0 ]]; then
-			if ! [[ -z $miclave ]]; then
-				algrub=$(echo -e "$miclave""\n""$miclave" | grub-mkpasswd-pbkdf2 | awk '/grub.pbkdf/{print$NF}')
-				echo 'cat << EOF' >> /etc/grub.d/00_header
-				echo 'set superusers='$(echo '"'$grubuser'"') >> /etc/grub.d/00_header
-				echo 'password' $grubuser $algrub >> /etc/grub.d/00_header
-				echo 'EOF' >> /etc/grub.d/00_header
-				update-grub2
-			else
-				$errores --text="Debe introducir una contraseña"
-				grubclave
-			fi
-		fi
-
-	}
 	$advertencia --timeout 5 --text="¿Desea colocar una clave al Grub?"
 	if [[ $? = 0 ]]; then
 		grubclave
@@ -1272,23 +1294,6 @@ if [[ $change_user = "yes" ]]; then
 else
 	parauser
 	grubuser="user"
-	function grubclave () {
-		miclave=$(yad --fixed --center --text-align=fill --borders=6 --title="Clave del Grub" --text="Introduzca una clave para el GRUB, debe ser diferente a la clave del usuario." --entry)
-		if [[ $? = 0 ]]; then
-			if ! [[ -z $miclave ]]; then
-				algrub=$(echo -e "$miclave""\n""$miclave" | grub-mkpasswd-pbkdf2 | awk '/grub.pbkdf/{print$NF}')
-				echo 'cat << EOF' >> /etc/grub.d/00_header
-				echo 'set superusers='$(echo '"'$grubuser'"') >> /etc/grub.d/00_header
-				echo 'password' $grubuser $algrub >> /etc/grub.d/00_header
-				echo 'EOF' >> /etc/grub.d/00_header
-				update-grub2
-			else
-				$errores --text="Debe introducir una contraseña"
-				grubclave
-			fi
-		fi
-
-	}
 	$advertencia --timeout 5 --text="¿Desea colocar una clave al Grub?"
 	if [[ $? = 0 ]]; then
 		grubclave
