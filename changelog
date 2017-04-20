@@ -1,4 +1,22 @@
-commit 5503151da499c6b0cef4bfd715c7fa0a48814799 (HEAD, origin/master, origin/HEAD, master)
+commit dbcd38634494e72e979c4c550d08ac81eff85941 (HEAD, origin/master, origin/HEAD, master)
+Author: jose perez <sinfallas@gmail.com>
+Date:   Thu Apr 20 12:10:20 2017 -0400
+
+    * el cargador del instalador ahora comprueba la firma md5
+
+commit 19d9b233add31deaede58e3305d1043805b55aec
+Author: jose perez <sinfallas@gmail.com>
+Date:   Thu Apr 20 11:59:45 2017 -0400
+
+    * se agrega  archivo de sumas de comprobacion del instalador
+
+commit d0a062a85db9fd71512543dff0a2061c4fdbae60
+Author: jose perez <sinfallas@gmail.com>
+Date:   Thu Apr 6 11:19:19 2017 -0400
+
+    * changelog
+
+commit 5503151da499c6b0cef4bfd715c7fa0a48814799
 Author: jose perez <sinfallas@gmail.com>
 Date:   Thu Apr 6 11:19:06 2017 -0400
 
