@@ -1,9 +1,18 @@
 #!/usr/bin/env bash
+# Made by Sinfallas <sinfallas@yahoo.com>
+# Licence: GPL-2
+LC_ALL=C
 wget -q -T 4 -O /tmp/xanaduinstaller-tmp - https://raw.githubusercontent.com/xanadu-linux/xanadu-installer/master/xanaduinstaller-yad-final
+wget -q -T 4 -O /tmp/md5sums - https://raw.githubusercontent.com/xanadu-linux/xanadu-installer/master/md5sums
+
 if [[ -s /tmp/xanaduinstaller-tmp ]]; then
-	chmod +x /tmp/xanaduinstaller-tmp
-	source /tmp/xanaduinstaller-tmp
-	exit 0
+	cd /tmp
+	md5sum -c md5sums
+	if [[ $? = 0 ]]; then
+		chmod +x /tmp/xanaduinstaller-tmp
+		source /tmp/xanaduinstaller-tmp
+		exit 0
+	fi
 fi
 source /usr/bin/xanaduinstaller-yad-final
 exit 0
