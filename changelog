@@ -1,4 +1,16 @@
-commit f7e84bee6ca022868ce0ff2511212a5644e56240 (HEAD, origin/master, origin/HEAD, master)
+commit ea6fb47984d55e8af655e6034bc124212eba1914 (HEAD, origin/master, origin/HEAD, master)
+Author: jose perez <sinfallas@gmail.com>
+Date:   Sun Jun 11 22:34:51 2017 -0400
+
+    * se actualiza el archivo md5sums
+
+commit d19d699bdf6ae5c0b83cf72978bdbdfce2d5ad7f
+Author: jose perez <sinfallas@gmail.com>
+Date:   Sun Jun 11 22:34:05 2017 -0400
+
+    * changelog
+
+commit f7e84bee6ca022868ce0ff2511212a5644e56240
 Author: jose perez <sinfallas@gmail.com>
 Date:   Sun Jun 11 22:33:31 2017 -0400
 
