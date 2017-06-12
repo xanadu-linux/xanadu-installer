@@ -919,9 +919,8 @@ fi
 
 if [[ -z $home_dev ]]; then
 	home_dev_message="--> /home no estara en una particion separada."
-elif
-	[[ $no_format = "yes" ]]; then
-		home_dev_message="--> /home se instalara en $home_dev"
+elif [[ $no_format = "yes" ]]; then
+	home_dev_message="--> /home se instalara en $home_dev"
 else
 	home_dev_message="--> /home se instalara en $home_dev y formateado como $fs_type_home"
 fi
