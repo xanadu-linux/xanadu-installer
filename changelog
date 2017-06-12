@@ -1,4 +1,16 @@
-commit 1697f3e7551744518e16f4d1c6d979d7127a5d4a (HEAD, origin/master, origin/HEAD, master)
+commit f7e84bee6ca022868ce0ff2511212a5644e56240 (HEAD, origin/master, origin/HEAD, master)
+Author: jose perez <sinfallas@gmail.com>
+Date:   Sun Jun 11 22:33:31 2017 -0400
+
+    * se sustituyen otras rutas estaticas por variables
+
+commit 6cb2db7a36b06e9d201d8e1a3ab2c9eae2bda33b
+Author: jose perez <sinfallas@gmail.com>
+Date:   Thu Apr 20 15:58:09 2017 -0400
+
+    * changelog
+
+commit 1697f3e7551744518e16f4d1c6d979d7127a5d4a
 Author: jose perez <sinfallas@gmail.com>
 Date:   Thu Apr 20 15:57:39 2017 -0400
 
