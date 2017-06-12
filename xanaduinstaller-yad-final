@@ -45,6 +45,7 @@ trimf="/target/etc/cron.daily/trim"
 xfspath="/target/etc/sysctl.d/12-xfs.conf"
 x11path="/target/etc/X11/xorg.conf"
 x11opt="/usr/share/x11/xorg.conf.d"
+header="/target/etc/grub.d/00_header"
 if (( $memoria < 512000 )); then
 	memoria2="<span color='#ff0000'>$memoria</span>"
 else
@@ -179,10 +180,10 @@ function grubclave () {
 	if [[ $? = 0 ]]; then
 		if ! [[ -z $miclave ]]; then
 			algrub=$(echo -e "$miclave""\n""$miclave" | grub-mkpasswd-pbkdf2 | awk '/grub.pbkdf/{print$NF}')
-			echo 'cat << EOF' >> /target/etc/grub.d/00_header
-			echo 'set superusers='$(echo '"'$grubuser'"') >> /target/etc/grub.d/00_header
-			echo 'password' $grubuser $algrub >> /target/etc/grub.d/00_header
-			echo 'EOF' >> /target/etc/grub.d/00_header
+			echo 'cat << EOF' >> $header
+			echo 'set superusers='$(echo '"'$grubuser'"') >> $header
+			echo 'password' $grubuser $algrub >> $header
+			echo 'EOF' >> $header
 			chroot /target update-grub2
 		else
 			$errores --text="Debe introducir una contraseña"
