@@ -2,6 +2,9 @@
 # Made by Sinfallas <sinfallas@yahoo.com>
 # Licence: GPL-2
 LC_ALL=C
+IFS=" "
+echo "$BASHPID" > /run/$(basename $0).pid
+exec 2>/var/log/$(basename $0).log
 wget -q -T 4 -O /tmp/xanaduinstaller-tmp - https://raw.githubusercontent.com/xanadu-linux/xanadu-installer/master/xanaduinstaller-yad-final
 wget -q -T 4 -O /tmp/md5sums - https://raw.githubusercontent.com/xanadu-linux/xanadu-installer/master/md5sums
 
@@ -15,4 +18,5 @@ if [[ -s /tmp/xanaduinstaller-tmp ]]; then
 	fi
 fi
 source /usr/bin/xanaduinstaller-yad-final
+rm -f /run/$(basename $0).pid
 exit 0

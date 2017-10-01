@@ -3,6 +3,7 @@
 # Licence: GPL-2
 # Based on refractainstaller-8.0.3 by Dean Linkous
 LC_ALL=C
+IFS=" "
 if [[ "$EUID" != "0" ]]; then
 	yad --window-icon=/usr/share/icons/install-icon.png --skip-taskbar --button=Aceptar:1 --fixed --center --text-align=fill --borders=6 --timeout=3 --title=ERROR --text="ERROR: Debes ser root."
 	exit 0
